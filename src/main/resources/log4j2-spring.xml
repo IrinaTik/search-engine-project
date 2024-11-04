@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration debug="true">
+    <Properties>
+        <Property name="LOG_PATH" value="./logs" />
+        <Property name="ERROR_LOG_PATH" value="errors" />
+        <Property name="INFO_LOG_PATH" value="info" />
+        <Property name="LOG_FILE_NAME" value="search-engine-log4j2" />
+        <Property name="CONSOLE_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} %magenta{%-5level } %yellow{[%t]} %blue{%c{10}}: %msg%n%throwable"/>
+        <Property name="LOG_FILE_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] : %msg%n%throwable"/>
+        <Property name="ERROR_LOG_FILE_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] @line:%L : %msg%n%throwable"/>
+        <Property name="FILE_ROLLOVER_SIZE" value="100 MB"/>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${CONSOLE_PATTERN}"/>
+        </Console>
+
+        <RollingFile name="RollingFileError"
+                     fileName="${LOG_PATH}/${LOG_FILE_NAME}-error.log"
+                     filePattern="${LOG_PATH}/$${date:yyyy-MM}/${ERROR_LOG_PATH}/${LOG_FILE_NAME}-%d{yyyy-MM-dd}.log.%i">
+            <PatternLayout>
+                <pattern>${ERROR_LOG_FILE_PATTERN}</pattern>
+            </PatternLayout>
+            <Policies>
+                <!-- rollover on startup, daily and when the file reaches size limit -->
+                <OnStartupTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="${FILE_ROLLOVER_SIZE}" />
+                <TimeBasedTriggeringPolicy />
+            </Policies>
+        </RollingFile>
+
+        <RollingFile name="RollingFileInfo"
+                     fileName="${LOG_PATH}/${LOG_FILE_NAME}-info.log"
+                     filePattern="${LOG_PATH}/$${date:yyyy-MM}/${INFO_LOG_PATH}/${LOG_FILE_NAME}-%d{yyyy-MM-dd}.log.%i">
+            <PatternLayout>
+                <pattern>${LOG_FILE_PATTERN}</pattern>
+            </PatternLayout>
+            <Policies>
+                <!-- rollover on startup, daily and when the file reaches size limit -->
+                <OnStartupTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="${FILE_ROLLOVER_SIZE}" />
+                <TimeBasedTriggeringPolicy />
+            </Policies>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <Root level="INFO" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="RollingFileError" level="ERROR"/>
+            <AppenderRef ref="RollingFileInfo" level="INFO"/>
+        </Root>
+    </Loggers>
+
+</Configuration>
