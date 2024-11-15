@@ -19,3 +19,12 @@ indexing-settings:
       name: Skillbox
     - url: https://playback.ru
       name: PlayBack.Ru
+
+jsoup-setting:
+  userAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 YaBrowser/21.9.0.1044 Yowser/2.5 Safari/537.36
+  referrer: http://www.google.com
+  timeout: 120_000
+  pauseBeforeParseMultiplier: 15_000
+  pauseBeforeParseSummand: 1_000
+  maxBodySize: 0
+  ignoreContentType: true
