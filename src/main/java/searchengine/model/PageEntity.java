@@ -4,6 +4,7 @@ import lombok.*;
 
 import jakarta.persistence.*;
 import java.util.Objects;
+import java.util.Set;
 
 // Lombok
 @Getter
@@ -33,6 +34,9 @@ public class PageEntity {
 
     @Column(nullable = false, columnDefinition = "MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci")
     private String content;
+
+    @Transient
+    private Set<String> childLinks;
 
     @Override
     public boolean equals(Object o) {

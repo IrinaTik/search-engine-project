@@ -18,7 +18,13 @@ indexing-settings:
     - url: https://skillbox.ru
       name: Skillbox
     - url: https://playback.ru
-      name: PlayBack.Ru
+      name: Playback
+    - url: https://mpei.ru
+      name: Национальный исследовательский университет МЭИ
+    - url: https://ipfran.ru
+      name: Институт прикладной физики РАН
+    - url: https://www.svetlovka.ru
+      name: ЦГМБ имени М.А.Светлова
 
 jsoup-setting:
   userAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 YaBrowser/21.9.0.1044 Yowser/2.5 Safari/537.36

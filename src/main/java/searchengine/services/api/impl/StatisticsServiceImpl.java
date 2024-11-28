@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.services.api.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -9,6 +9,7 @@ import searchengine.dto.statistics.DetailedStatisticsItem;
 import searchengine.dto.statistics.StatisticsData;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.dto.statistics.TotalStatistics;
+import searchengine.services.api.StatisticsService;
 
 import java.util.ArrayList;
 import java.util.List;
