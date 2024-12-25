@@ -54,6 +54,11 @@ public class PageServiceImpl implements PageService {
     }
 
     @Override
+    public void delete(PageEntity page) {
+        pageRepository.delete(page);
+    }
+
+    @Override
     public void deleteAll() {
         pageRepository.deleteAllInBatch();
     }

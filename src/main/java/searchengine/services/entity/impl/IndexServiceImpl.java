@@ -43,4 +43,13 @@ public class IndexServiceImpl implements IndexService {
     public void deleteAll() {
         indexRepository.deleteAllInBatch();
     }
+
+    @Override
+    public IndexEntity createIndexForPage(LemmaEntity lemmaEntity, Float rank, PageEntity page) {
+        IndexEntity indexEntity = new IndexEntity();
+        indexEntity.setPage(page);
+        indexEntity.setLemma(lemmaEntity);
+        indexEntity.setRank(rank);
+        return indexEntity;
+    }
 }

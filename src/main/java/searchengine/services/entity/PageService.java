@@ -4,6 +4,7 @@ import jakarta.annotation.Nullable;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 
+import java.util.List;
 import java.util.Set;
 
 public interface PageService {
@@ -13,6 +14,8 @@ public interface PageService {
     PageEntity getByAbsPathAndSite(String absPath, SiteEntity site);
 
     PageEntity save(PageEntity page);
+
+    void delete(PageEntity page);
 
     void deleteAll();
 

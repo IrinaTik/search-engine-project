@@ -11,10 +11,12 @@ public class GenerateIndexingResponseAction {
     public static final String INDEXING_ALREADY_STARTED_ERROR = "Индексация уже запущена";
     public static final String INDEXING_NOT_STARTED_ERROR = "Индексация не запущена";
     public static final String SITE_HOME_PAGE_NOT_ACCESSIBLE = "Главная страница сайта недоступна";
+    public static final String PAGE_NOT_LISTED_IN_CONFIG = "Данная страница находится за пределами сайтов, указанных в конфигурационном файле";
 
     private static final IndexingResponse INDEXING_ALREADY_STARTED_RESPONSE = new IndexingResponse(false, INDEXING_ALREADY_STARTED_ERROR);
     private static final IndexingResponse INDEXING_NOT_STARTED_RESPONSE = new IndexingResponse(false, INDEXING_NOT_STARTED_ERROR);
     private static final IndexingResponse SITE_HOME_PAGE_NOT_ACCESSIBLE_RESPONSE = new IndexingResponse(false, SITE_HOME_PAGE_NOT_ACCESSIBLE);
+    private static final IndexingResponse PAGE_NOT_LISTED_IN_CONFIG_RESPONSE = new IndexingResponse(false, PAGE_NOT_LISTED_IN_CONFIG);
     private static final IndexingResponse GOOD_INDEXING_RESPONSE = new IndexingResponse(true, "");
 
     public static IndexingResponse getIndexingAlreadyStartedResponse() {
@@ -35,6 +37,11 @@ public class GenerateIndexingResponseAction {
     public static IndexingResponse getSiteHomePageNotAccessibleResponse(String siteUrl) {
         log.error("Home page for site {} is not accessible", siteUrl);
         return SITE_HOME_PAGE_NOT_ACCESSIBLE_RESPONSE;
+    }
+
+    public static IndexingResponse getPageNotListedInConfigResponse(String pageUrl) {
+        log.error("Page with url {} is not part of site list in configuration file", pageUrl);
+        return PAGE_NOT_LISTED_IN_CONFIG_RESPONSE;
     }
 
     public static IndexingResponse getAllGoodResponse() {

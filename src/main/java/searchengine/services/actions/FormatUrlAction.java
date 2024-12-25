@@ -42,4 +42,8 @@ public class FormatUrlAction {
     public static boolean isHomePageRelativePath(String relativePath) {
         return StringUtils.equals(relativePath, SITE_HOME_PAGE_RELATIVE_PATH);
     }
+
+    public static boolean isPagePartOfSite(String siteUrl, String pageUrl) {
+        return StringUtils.containsIgnoreCase(pageUrl, siteUrl);
+    }
 }
