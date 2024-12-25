@@ -3,9 +3,9 @@ package searchengine.services.api;
 import searchengine.dto.indexing.IndexingResponse;
 
 public interface IndexingService {
-    IndexingResponse indexingAllSites();
+    IndexingResponse initiateFullIndexing();
 
-    IndexingResponse indexingAddedPage();
+    IndexingResponse initiatePartialIndexing(String url);
 
     IndexingResponse stopIndexing();
 }

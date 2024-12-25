@@ -17,4 +17,6 @@ public interface IndexService {
     void deleteAll(Iterable<IndexEntity> indexes);
 
     void deleteAll();
+
+    IndexEntity createIndexForPage(LemmaEntity lemmaEntity, Float rank, PageEntity page);
 }

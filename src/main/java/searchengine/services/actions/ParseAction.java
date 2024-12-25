@@ -6,10 +6,13 @@ import lombok.extern.log4j.Log4j2;
 import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
 import searchengine.config.JsoupConfig;
+import searchengine.dto.indexing.PageIndexingData;
 import searchengine.exceptions.PageAlreadyPresentException;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.SiteIndexingStatus;
+import searchengine.services.entity.IndexService;
+import searchengine.services.entity.LemmaService;
 import searchengine.services.entity.PageService;
 import searchengine.services.entity.SiteService;
 
@@ -20,9 +23,10 @@ import java.util.concurrent.RecursiveAction;
 
 import static searchengine.model.SiteIndexingStatus.FAILED;
 import static searchengine.model.SiteIndexingStatus.INDEXING;
-import static searchengine.services.actions.ExtractConnectionInfoAction.getChildLinksFromResponse;
-import static searchengine.services.actions.ExtractConnectionInfoAction.getResponseFromUrl;
+import static searchengine.services.actions.ComputeIndexingInfoAction.computeIndexingInfoForPage;
+import static searchengine.services.actions.ExtractConnectionInfoAction.*;
 import static searchengine.services.actions.GenerateLockAction.*;
+import static searchengine.services.actions.HandleExceptionsAction.handlePageAlreadyPresentExceptions;
 
 @Log4j2
 public class ParseAction extends RecursiveAction {
@@ -31,9 +35,13 @@ public class ParseAction extends RecursiveAction {
 
     @Setter(AccessLevel.PRIVATE)
     private static boolean isCancelled;
+    @Setter(AccessLevel.PRIVATE)
+    private static boolean isLimited;
 
     private final SiteService siteService;
     private final PageService pageService;
+    private final LemmaService lemmaService;
+    private final IndexService indexService;
 
     private final SiteEntity site;
     private final String pageUrl;
@@ -42,12 +50,16 @@ public class ParseAction extends RecursiveAction {
                        SiteEntity site,
                        JsoupConfig jsoupConfig,
                        SiteService siteService,
-                       PageService pageService) {
+                       PageService pageService,
+                       LemmaService lemmaService,
+                       IndexService indexService) {
         this.pageUrl = pageUrl;
         this.site = site;
         this.jsoupConfig = jsoupConfig;
         this.siteService = siteService;
         this.pageService = pageService;
+        this.lemmaService = lemmaService;
+        this.indexService = indexService;
     }
 
     @Override
@@ -58,9 +70,9 @@ public class ParseAction extends RecursiveAction {
         log.info("Starting parsing for page {}", pageUrl);
         PageEntity page = extractPageFromUrl();
         if (isPageValidToProcess(page)) {
-            saveExtractedPage(page);
+            processExtractedPage(page);
             Set<String> childLinks = page.getChildLinks();
-            if (!isCancelled && childLinksAreValidToProcess(childLinks)) {
+            if (!isCancelled && !isLimited && childLinksAreValidToProcess(childLinks)) {
                 forkAndJoinParseTasks(childLinks);
             }
         }
@@ -68,7 +80,7 @@ public class ParseAction extends RecursiveAction {
 
     private PageEntity extractPageFromUrl() {
         if (isUrlPresentInDatabase()) {
-            handlePageAlreadyPresentExceptions();
+            handlePageAlreadyPresentExceptions(pageUrl, site);
             return null;
         }
         PageEntity page = pageService.createPageByAbsPathAndSitePath(pageUrl, site);
@@ -93,19 +105,17 @@ public class ParseAction extends RecursiveAction {
         return page != null && page.getCode() != null;
     }
 
-    private void saveExtractedPage(PageEntity page) {
-        boolean isPageSaved = false;
+    private void processExtractedPage(PageEntity page) {
         debugCheckLock();
         try {
             lockPageParseWriteLock();
-            isPageSaved = saveExtractedPageToDatabase(page);
+            computeAndSaveExtractedPageInfoToDatabase(page);
+        } catch (PageAlreadyPresentException ex) {
+            handlePageAlreadyPresentExceptions(pageUrl, site);
         } catch (Exception ex) {
-            log.error("Exception while saving to DB page {}", pageUrl, ex);
+            log.error("Exception while saving to DB page with indexing info, url - {}", pageUrl, ex);
         } finally {
             unlockPageParseWriteLock();
-            if (!isPageSaved) {
-                handlePageAlreadyPresentExceptions();
-            }
         }
     }
 
@@ -113,10 +123,25 @@ public class ParseAction extends RecursiveAction {
         if (PAGE_PARSE_LOCK.isWriteLocked()) {
             log.debug("Page write lock is NOT free for page {} \n\t {}", pageUrl, PAGE_PARSE_LOCK);
             if (PAGE_PARSE_LOCK.isWriteLockedByCurrentThread()) {
-                log.error("Page write lock is being held by this thread while parsing page {} \n\t {}",
+                log.debug("Page write lock is being held by this thread while parsing page {} \n\t {}",
                         pageUrl,
                         PAGE_PARSE_LOCK);
             }
+        }
+    }
+
+    private void computeAndSaveExtractedPageInfoToDatabase(PageEntity page) {
+        boolean isPageSaved;
+        isPageSaved = saveExtractedPageToDatabase(page);
+        if (!isPageSaved) {
+            throw new PageAlreadyPresentException();
+        }
+        if (isPageCodeSuccessful(page.getCode())) {
+            PageIndexingData pageIndexingData = computeIndexingInfoForPage(lemmaService, indexService, page);
+            saveExtractedPageIndexingDataToDatabase(pageIndexingData);
+        } else {
+            log.error("Page {} was parsed with code {} - computing indexing info is not possible",
+                    page.getSite().getUrl() + page.getRelativePath(), page.getCode());
         }
     }
 
@@ -129,6 +154,21 @@ public class ParseAction extends RecursiveAction {
         return false;
     }
 
+    private void saveExtractedPageIndexingDataToDatabase(PageIndexingData pageIndexingData) {
+        if (pageIndexingData == null) {
+            throw new IllegalArgumentException("Indexing data is null");
+        }
+        if (pageIndexingData.getLemmasByPage() == null || pageIndexingData.getLemmasByPage().isEmpty() ||
+                pageIndexingData.getIndexesByPage() == null || pageIndexingData.getIndexesByPage().isEmpty()) {
+            throw new IllegalArgumentException("Indexing data lemmas list and/or indexes list is empty");
+        }
+        lemmaService.saveAll(pageIndexingData.getLemmasByPage());
+        indexService.saveAll(pageIndexingData.getIndexesByPage());
+        log.info("Indexing info for page {} is saved to database\n\tLemmas count : {}, indexes count : {} ",
+                pageIndexingData.getPage().getSite().getUrl() + pageIndexingData.getPage().getRelativePath(),
+                pageIndexingData.getLemmasByPage().size(), pageIndexingData.getIndexesByPage().size());
+    }
+
     private boolean childLinksAreValidToProcess(Set<String> childLinks) {
         return childLinks != null && !childLinks.isEmpty();
     }
@@ -139,7 +179,7 @@ public class ParseAction extends RecursiveAction {
             if (isCancelled) {
                 return;
             }
-            ParseAction parser = new ParseAction(childLink, site, jsoupConfig, siteService, pageService);
+            ParseAction parser = new ParseAction(childLink, site, jsoupConfig, siteService, pageService, lemmaService, indexService);
             parser.fork();
             parsers.add(parser);
         }
@@ -181,11 +221,6 @@ public class ParseAction extends RecursiveAction {
         }
     }
 
-    private void handlePageAlreadyPresentExceptions() {
-        PageAlreadyPresentException exception = new PageAlreadyPresentException(pageUrl, site.getUrl());
-        log.warn(exception.getMessage());
-    }
-
     private boolean isVisitedPage() {
         return pageService.getByAbsPathAndSite(pageUrl, site) != null;
     }
@@ -208,6 +243,16 @@ public class ParseAction extends RecursiveAction {
 
     public static void stopParsing() {
         setCancelled(true);
+    }
+
+    public static void readyForFullParsing() {
+        setCancelled(false);
+        setLimited(false);
+    }
+
+    public static void readyForLimitedParsing() {
+        setCancelled(false);
+        setLimited(true);
     }
 
 }

@@ -22,6 +22,11 @@ public class SiteServiceImpl implements SiteService {
     private final SiteRepository siteRepository;
 
     @Override
+    public SiteEntity getByUrl(String url) {
+        return siteRepository.findByUrl(url).orElse(null);
+    }
+
+    @Override
     public List<SiteEntity> getAll() {
         return siteRepository.findAll();
     }

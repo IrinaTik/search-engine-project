@@ -1,9 +1,7 @@
 package searchengine.controllers;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import searchengine.dto.indexing.IndexingResponse;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.api.IndexingService;
@@ -29,13 +27,19 @@ public class ApiController {
 
     @GetMapping("/startIndexing")
     public ResponseEntity<IndexingResponse> startIndexing() {
-        IndexingResponse indexingResponse = indexingService.indexingAllSites();
+        IndexingResponse indexingResponse = indexingService.initiateFullIndexing();
         return ResponseEntity.ok(indexingResponse);
     }
 
     @GetMapping("/stopIndexing")
     public ResponseEntity<IndexingResponse> stopIndexing() {
         IndexingResponse response = indexingService.stopIndexing();
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/indexPage")
+    public ResponseEntity<IndexingResponse> startIndexingOnePage(@RequestParam String url) {
+        IndexingResponse response = indexingService.initiatePartialIndexing(url);
         return ResponseEntity.ok(response);
     }
 }
