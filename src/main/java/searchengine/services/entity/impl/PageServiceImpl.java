@@ -45,6 +45,16 @@ public class PageServiceImpl implements PageService {
     }
 
     @Override
+    public Integer countBySite(SiteEntity siteEntity) {
+        return pageRepository.countBySite(siteEntity);
+    }
+
+    @Override
+    public Long countAll() {
+        return pageRepository.count();
+    }
+
+    @Override
     public PageEntity save(PageEntity page) {
         if (!isHomePageRelativePath(page.getRelativePath())) {
             String relativePathWithoutEscapeEnd = removeEscapeEnd(page.getRelativePath());

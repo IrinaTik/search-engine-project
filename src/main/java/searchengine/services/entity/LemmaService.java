@@ -8,6 +8,10 @@ import java.util.List;
 
 public interface LemmaService {
 
+    Integer countBySite(SiteEntity siteEntity);
+
+    Long countAll();
+
     LemmaEntity save(LemmaEntity lemma);
 
     List<LemmaEntity> saveAll(Collection<LemmaEntity> lemmas);

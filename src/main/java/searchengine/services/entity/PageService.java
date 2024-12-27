@@ -13,6 +13,10 @@ public interface PageService {
 
     PageEntity getByAbsPathAndSite(String absPath, SiteEntity site);
 
+    Integer countBySite(SiteEntity siteEntity);
+
+    Long countAll();
+
     PageEntity save(PageEntity page);
 
     void delete(PageEntity page);
