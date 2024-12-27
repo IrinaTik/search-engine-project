@@ -20,6 +20,16 @@ public class LemmaServiceImpl implements LemmaService {
     private final LemmaRepository lemmaRepository;
 
     @Override
+    public Integer countBySite(SiteEntity siteEntity) {
+        return lemmaRepository.countBySite(siteEntity);
+    }
+
+    @Override
+    public Long countAll() {
+        return lemmaRepository.count();
+    }
+
+    @Override
     public LemmaEntity save(LemmaEntity lemma) {
         return lemmaRepository.saveAndFlush(lemma);
     }

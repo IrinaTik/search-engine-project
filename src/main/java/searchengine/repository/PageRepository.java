@@ -15,4 +15,6 @@ public interface PageRepository extends JpaRepository<PageEntity, Integer> {
 
     List<PageEntity> findBySite(SiteEntity site);
 
+    Integer countBySite(SiteEntity siteEntity);
+
 }
