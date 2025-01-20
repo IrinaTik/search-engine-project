@@ -1,13 +1,11 @@
 package searchengine.services.actions;
 
 import lombok.extern.log4j.Log4j2;
+import searchengine.exceptions.InvalidSearchQueryException;
 import searchengine.exceptions.PageAlreadyPresentException;
 import searchengine.model.SiteEntity;
+import searchengine.model.SiteIndexingStatus;
 import searchengine.services.entity.SiteService;
-
-import static searchengine.model.SiteIndexingStatus.FAILED;
-import static searchengine.services.actions.GenerateLockAction.lockSiteParseWriteLock;
-import static searchengine.services.actions.GenerateLockAction.unlockSiteParseWriteLock;
 
 @Log4j2
 public class HandleExceptionsAction {
@@ -19,9 +17,9 @@ public class HandleExceptionsAction {
 
     public static void handleUnexpectedIndexingException(SiteService siteService, SiteEntity site, Exception ex) {
         try {
-            lockSiteParseWriteLock();
+            GenerateLockAction.lockSiteParseWriteLock();
             siteService.updateSiteStatusInfo(
-                    FAILED,
+                    SiteIndexingStatus.FAILED,
                     "Unexpected exception : " + ex.getMessage() + ". See logs for more information.",
                     site);
             siteService.save(site);
@@ -29,7 +27,7 @@ public class HandleExceptionsAction {
         } catch (Exception exception) {
             log.error("Exception inside of exception while saving info for site {}", site.getUrl(), ex);
         } finally {
-            unlockSiteParseWriteLock();
+            GenerateLockAction.unlockSiteParseWriteLock();
         }
     }
 }

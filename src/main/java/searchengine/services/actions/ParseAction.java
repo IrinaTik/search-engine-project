@@ -21,13 +21,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.RecursiveAction;
 
-import static searchengine.model.SiteIndexingStatus.FAILED;
-import static searchengine.model.SiteIndexingStatus.INDEXING;
-import static searchengine.services.actions.ComputeIndexingInfoAction.computeIndexingInfoForPage;
-import static searchengine.services.actions.ExtractConnectionInfoAction.*;
-import static searchengine.services.actions.GenerateLockAction.*;
-import static searchengine.services.actions.HandleExceptionsAction.handlePageAlreadyPresentExceptions;
-
 @Log4j2
 public class ParseAction extends RecursiveAction {
 
@@ -80,11 +73,11 @@ public class ParseAction extends RecursiveAction {
 
     private PageEntity extractPageFromUrl() {
         if (isUrlPresentInDatabase()) {
-            handlePageAlreadyPresentExceptions(pageUrl, site);
+            HandleExceptionsAction.handlePageAlreadyPresentExceptions(pageUrl, site);
             return null;
         }
         PageEntity page = pageService.createPageByAbsPathAndSitePath(pageUrl, site);
-        SiteIndexingStatus status = INDEXING;
+        SiteIndexingStatus status = SiteIndexingStatus.INDEXING;
         String siteLastError = "";
         try {
             extractPageParseInfoFromResponse(page);
@@ -93,7 +86,7 @@ public class ParseAction extends RecursiveAction {
             pageService.updateParseInfo(ex.getStatusCode(), "", null, page);
         } catch (Exception ex) {
             log.error("Exception while parsing page {} -> {}", pageUrl, ex.getMessage(), ex);
-            status = FAILED;
+            status = SiteIndexingStatus.FAILED;
             siteLastError = "Ошибка при парсинге страницы " + pageUrl + " -> " + ex.getMessage();
         } finally {
             updateSiteStatusInfoAfterParsingPage(status, siteLastError, page);
@@ -108,24 +101,24 @@ public class ParseAction extends RecursiveAction {
     private void processExtractedPage(PageEntity page) {
         debugCheckLock();
         try {
-            lockPageParseWriteLock();
+            GenerateLockAction.lockPageParseWriteLock();
             computeAndSaveExtractedPageInfoToDatabase(page);
         } catch (PageAlreadyPresentException ex) {
-            handlePageAlreadyPresentExceptions(pageUrl, site);
+            HandleExceptionsAction.handlePageAlreadyPresentExceptions(pageUrl, site);
         } catch (Exception ex) {
-            log.error("Exception while saving to DB page with indexing info, url - {}", pageUrl, ex);
+            log.error("Exception while saving to database page with indexing info, url - {}", pageUrl, ex);
         } finally {
-            unlockPageParseWriteLock();
+            GenerateLockAction.unlockPageParseWriteLock();
         }
     }
 
     private void debugCheckLock() {
-        if (PAGE_PARSE_LOCK.isWriteLocked()) {
-            log.debug("Page write lock is NOT free for page {} \n\t {}", pageUrl, PAGE_PARSE_LOCK);
-            if (PAGE_PARSE_LOCK.isWriteLockedByCurrentThread()) {
+        if (GenerateLockAction.PAGE_PARSE_LOCK.isWriteLocked()) {
+            log.debug("Page write lock is NOT free for page {} \n\t {}", pageUrl, GenerateLockAction.PAGE_PARSE_LOCK);
+            if (GenerateLockAction.PAGE_PARSE_LOCK.isWriteLockedByCurrentThread()) {
                 log.debug("Page write lock is being held by this thread while parsing page {} \n\t {}",
                         pageUrl,
-                        PAGE_PARSE_LOCK);
+                        GenerateLockAction.PAGE_PARSE_LOCK);
             }
         }
     }
@@ -136,11 +129,12 @@ public class ParseAction extends RecursiveAction {
         if (!isPageSaved) {
             throw new PageAlreadyPresentException();
         }
-        if (isPageCodeSuccessful(page.getCode())) {
-            PageIndexingData pageIndexingData = computeIndexingInfoForPage(lemmaService, indexService, page);
+        if (ExtractConnectionInfoAction.isPageCodeSuccessful(page.getCode())) {
+            PageIndexingData pageIndexingData =
+                    ComputeIndexingInfoAction.computeIndexingInfoForPage(lemmaService, indexService, page);
             saveExtractedPageIndexingDataToDatabase(pageIndexingData);
         } else {
-            log.error("Page {} was parsed with code {} - computing indexing info is not possible",
+            log.warn("Page {} was parsed with code {} - computing indexing info is not possible",
                     page.getSite().getUrl() + page.getRelativePath(), page.getCode());
         }
     }
@@ -148,7 +142,7 @@ public class ParseAction extends RecursiveAction {
     private boolean saveExtractedPageToDatabase(PageEntity page) {
         if (!isVisitedPage()) {
             pageService.save(page);
-            log.info("Page {} is saved to DB", pageUrl);
+            log.info("Page {} is saved to database", pageUrl);
             return true;
         }
         return false;
@@ -191,24 +185,24 @@ public class ParseAction extends RecursiveAction {
     private boolean isUrlPresentInDatabase() {
         boolean isVisitedPage = false;
         try {
-            lockPageParseReadLock();
+            GenerateLockAction.lockPageParseReadLock();
             isVisitedPage = isVisitedPage();
         } catch (Exception ex) {
-            log.error("Exception while trying to determine if page {} is already present in DB", pageUrl, ex);
+            log.error("Exception while trying to determine if page {} is already present in database", pageUrl, ex);
         } finally {
-            unlockPageParseReadLock();
+            GenerateLockAction.unlockPageParseReadLock();
         }
         return isVisitedPage;
     }
 
     private void extractPageParseInfoFromResponse(PageEntity page) throws Exception {
         log.info("Extracting page {}, site -> {}", pageUrl, site.getUrl());
-        Connection.Response response = getResponseFromUrl(pageUrl, jsoupConfig);
+        Connection.Response response = ExtractConnectionInfoAction.getResponseFromUrl(pageUrl, jsoupConfig);
         log.debug("Response for {} -> response.statusCode() {}, response.body() {}",
                 pageUrl,
                 response.statusCode(),
                 (response.body() == null || response.body().isEmpty()) ? "null or empty" : "OK");
-        Set<String> pageChildLinks = getChildLinksFromResponse(response, pageUrl);
+        Set<String> pageChildLinks = ExtractConnectionInfoAction.getChildLinksFromResponse(response, pageUrl);
         pageService.updateParseInfo(response.statusCode(), response.body(), pageChildLinks, page);
     }
 
@@ -216,7 +210,7 @@ public class ParseAction extends RecursiveAction {
         log.info("Parsing complete with code {} for page {}",
                 page.getCode() != null ? page.getCode() : "unknown",
                 pageUrl);
-        if (!isCancelled && (site.getStatus() != FAILED)) {
+        if (!isCancelled && (site.getStatus() != SiteIndexingStatus.FAILED)) {
             updateSiteStatusInfo(status, siteLastError);
         }
     }
@@ -227,7 +221,7 @@ public class ParseAction extends RecursiveAction {
 
     private void updateSiteStatusInfo(SiteIndexingStatus status, String siteLastError) {
         try {
-            lockSiteParseWriteLock();
+            GenerateLockAction.lockSiteParseWriteLock();
             siteService.updateSiteStatusInfo(status, siteLastError, site);
             siteService.save(site);
             log.debug("Site status info was updated after parsing page {}", pageUrl);
@@ -237,7 +231,7 @@ public class ParseAction extends RecursiveAction {
                     pageUrl,
                     ex);
         } finally {
-            unlockSiteParseWriteLock();
+            GenerateLockAction.unlockSiteParseWriteLock();
         }
     }
 
@@ -245,12 +239,12 @@ public class ParseAction extends RecursiveAction {
         setCancelled(true);
     }
 
-    public static void readyForFullParsing() {
+    public static void isReadyForFullParsing() {
         setCancelled(false);
         setLimited(false);
     }
 
-    public static void readyForLimitedParsing() {
+    public static void isReadyForLimitedParsing() {
         setCancelled(false);
         setLimited(true);
     }

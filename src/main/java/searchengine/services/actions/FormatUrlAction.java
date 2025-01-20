@@ -4,11 +4,14 @@ import org.apache.commons.lang3.StringUtils;
 import searchengine.exceptions.PageNotFromSiteException;
 import searchengine.model.SiteEntity;
 
+import java.util.List;
+
 public class FormatUrlAction {
 
     private static final String SCROLLUP_LINK = "#";
     private static final String ESCAPE_SYMBOL = "/";
     public static final String SITE_HOME_PAGE_RELATIVE_PATH = ESCAPE_SYMBOL;
+    private static final List<String> URL_IS_FILE = List.of(".doc", ".docx", ".pdf", ".png", ".jpg", ".jpeg");
 
     public static String convertAbsPathToRelativePath(String absPath, SiteEntity site) {
         String siteUrl = removeEscapeEnd(site.getUrl());
@@ -31,12 +34,17 @@ public class FormatUrlAction {
         link = removeEscapeEnd(link);
         return StringUtils.startsWithIgnoreCase(link, pageUrl) &&
                 !isSameLink(pageUrl, link) &&
-                !StringUtils.endsWith(link, SCROLLUP_LINK) &&
-                !StringUtils.startsWithIgnoreCase(link, pageUrl + SCROLLUP_LINK);
+                !StringUtils.contains(link, SCROLLUP_LINK) &&
+                !StringUtils.startsWithIgnoreCase(link, pageUrl + SCROLLUP_LINK) &&
+                !isFileLink(link);
     }
 
     private static boolean isSameLink(String link1, String link2) {
         return StringUtils.equalsIgnoreCase(link1, link2);
+    }
+
+    private static boolean isFileLink(String link) {
+        return URL_IS_FILE.stream().anyMatch(fileLinkPart -> StringUtils.containsIgnoreCase(link, fileLinkPart));
     }
 
     public static boolean isHomePageRelativePath(String relativePath) {

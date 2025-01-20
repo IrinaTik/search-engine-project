@@ -4,7 +4,6 @@ import jakarta.annotation.Nullable;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 
-import java.util.List;
 import java.util.Set;
 
 public interface PageService {
