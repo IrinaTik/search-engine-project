@@ -9,14 +9,13 @@ import searchengine.exceptions.PageNotFromSiteException;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.repository.PageRepository;
+import searchengine.services.actions.ExtractConnectionInfoAction;
+import searchengine.services.actions.FormatUrlAction;
 import searchengine.services.entity.PageService;
 
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
-
-import static searchengine.services.actions.ExtractConnectionInfoAction.isPageCodeSuccessful;
-import static searchengine.services.actions.FormatUrlAction.*;
 
 @Log4j2
 @Service
@@ -27,8 +26,8 @@ public class PageServiceImpl implements PageService {
 
     @Override
     public PageEntity getByRelativePathAndSite(String relativePath, SiteEntity site) {
-        if (!isHomePageRelativePath(relativePath)) {
-            relativePath = removeEscapeEnd(relativePath);
+        if (!FormatUrlAction.isHomePageRelativePath(relativePath)) {
+            relativePath = FormatUrlAction.removeEscapeEnd(relativePath);
         }
         return pageRepository.findByRelativePathAndSite(relativePath, site).orElse(null);
     }
@@ -36,7 +35,7 @@ public class PageServiceImpl implements PageService {
     @Override
     public PageEntity getByAbsPathAndSite(String absPath, SiteEntity site) {
         try {
-            String relativePath = convertAbsPathToRelativePath(absPath, site);
+            String relativePath = FormatUrlAction.convertAbsPathToRelativePath(absPath, site);
             return getByRelativePathAndSite(relativePath, site);
         } catch (PageNotFromSiteException ex) {
             log.error("Cannot get page by absolute path", ex);
@@ -56,8 +55,8 @@ public class PageServiceImpl implements PageService {
 
     @Override
     public PageEntity save(PageEntity page) {
-        if (!isHomePageRelativePath(page.getRelativePath())) {
-            String relativePathWithoutEscapeEnd = removeEscapeEnd(page.getRelativePath());
+        if (!FormatUrlAction.isHomePageRelativePath(page.getRelativePath())) {
+            String relativePathWithoutEscapeEnd = FormatUrlAction.removeEscapeEnd(page.getRelativePath());
             page.setRelativePath(relativePathWithoutEscapeEnd);
         }
         return pageRepository.saveAndFlush(page);
@@ -75,7 +74,7 @@ public class PageServiceImpl implements PageService {
 
     @Override
     public PageEntity createPageByAbsPathAndSitePath(String path, SiteEntity site) {
-        String relativePath = convertAbsPathToRelativePath(path, site);
+        String relativePath = FormatUrlAction.convertAbsPathToRelativePath(path, site);
         PageEntity page = createPageByRelativePath(relativePath);
         page.setSite(site);
         return page;
@@ -108,8 +107,10 @@ public class PageServiceImpl implements PageService {
     @Override
     public boolean isSiteHomePageAccessible(SiteEntity site) {
         Optional<PageEntity> homePageOptional =
-                pageRepository.findByRelativePathAndSite(SITE_HOME_PAGE_RELATIVE_PATH, site);
-        return homePageOptional.filter(page -> isPageCodeSuccessful(page.getCode())).isPresent();
+                pageRepository.findByRelativePathAndSite(FormatUrlAction.SITE_HOME_PAGE_RELATIVE_PATH, site);
+        return homePageOptional
+                .filter(page -> ExtractConnectionInfoAction.isPageCodeSuccessful(page.getCode()))
+                .isPresent();
     }
 
 }

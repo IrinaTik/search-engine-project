@@ -14,9 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static searchengine.services.actions.CollectLemmasAction.cleanText;
-import static searchengine.services.actions.CollectLemmasAction.collectLemmasFromTextWithCount;
-
 @Log4j2
 public class ComputeIndexingInfoAction {
 
@@ -26,8 +23,9 @@ public class ComputeIndexingInfoAction {
         log.info("Computing indexing info for page {} started",
                 page.getSite().getUrl() + page.getRelativePath());
         Instant start = Instant.now();
-        String cleanedPageContent = cleanText(page);
-        Map<String, Integer> lemmasFromTextWithCount = collectLemmasFromTextWithCount(cleanedPageContent);
+        String cleanedPageContent = CollectLemmasAction.cleanText(page.getContent());
+        Map<String, Integer> lemmasFromTextWithCount =
+                CollectLemmasAction.collectLemmasFromCleanedTextWithCount(cleanedPageContent);
         PageIndexingData pageIndexingData = computePageIndexingData(
                 lemmaService, indexService, lemmasFromTextWithCount, page);
         Instant end = Instant.now();

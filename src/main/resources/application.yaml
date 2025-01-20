@@ -27,7 +27,7 @@ indexing-settings:
       name: ЦГМБ имени М.А.Светлова
 
 jsoup-setting:
-  userAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 YaBrowser/21.9.0.1044 Yowser/2.5 Safari/537.36
+  userAgent: KapibaraSearchBot
   referrer: http://www.google.com
   timeout: 120_000
   pauseBeforeParseMultiplier: 15_000

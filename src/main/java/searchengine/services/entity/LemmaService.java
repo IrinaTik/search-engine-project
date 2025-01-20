@@ -12,6 +12,8 @@ public interface LemmaService {
 
     Long countAll();
 
+    LemmaEntity getBySiteAndLemma(SiteEntity site, String lemma);
+
     LemmaEntity save(LemmaEntity lemma);
 
     List<LemmaEntity> saveAll(Collection<LemmaEntity> lemmas);

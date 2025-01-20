@@ -10,6 +10,10 @@ import java.util.List;
 public interface IndexService {
     List<IndexEntity> getByPage(PageEntity page);
 
+    List<IndexEntity> getByLemma(LemmaEntity lemma);
+
+    IndexEntity getByLemmaAndPage(LemmaEntity lemma, PageEntity page);
+
     IndexEntity save(IndexEntity index);
 
     List<IndexEntity> saveAll(Collection<IndexEntity> indexes);

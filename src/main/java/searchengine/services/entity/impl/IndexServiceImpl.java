@@ -25,6 +25,16 @@ public class IndexServiceImpl implements IndexService {
     }
 
     @Override
+    public List<IndexEntity> getByLemma(LemmaEntity lemma) {
+        return indexRepository.findByLemma(lemma);
+    }
+
+    @Override
+    public IndexEntity getByLemmaAndPage(LemmaEntity lemma, PageEntity page) {
+        return indexRepository.findByLemmaAndPage(lemma, page).orElse(null);
+    }
+
+    @Override
     public IndexEntity save(IndexEntity index) {
         return indexRepository.saveAndFlush(index);
     }

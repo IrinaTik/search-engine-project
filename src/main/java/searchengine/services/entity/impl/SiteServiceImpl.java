@@ -12,8 +12,6 @@ import searchengine.services.entity.SiteService;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static searchengine.model.SiteIndexingStatus.INDEXING;
-
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -46,7 +44,7 @@ public class SiteServiceImpl implements SiteService {
         SiteEntity site = new SiteEntity();
         site.setName(name);
         site.setUrl(url);
-        site.setStatus(INDEXING);
+        site.setStatus(SiteIndexingStatus.INDEXING);
         site.setStatusTime(LocalDateTime.now());
         site.setLastError("");
         return site;

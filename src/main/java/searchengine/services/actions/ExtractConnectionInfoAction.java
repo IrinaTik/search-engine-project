@@ -14,14 +14,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static searchengine.services.actions.FormatUrlAction.isGoodLink;
-
 @Log4j2
 public class ExtractConnectionInfoAction {
 
     private static final String CSS_QUERY = "a[href]";
     private static final String LINK_ELEMENT_KEY = "href";
-    private static final Integer PAGE_CODE_SUCCESS = 200;
+    public static final Integer PAGE_CODE_SUCCESS = 200;
 
     private static final List<String> ACCEPTABLE_CONTENT_TYPES = List.of(
             "text/plain",
@@ -72,7 +70,7 @@ public class ExtractConnectionInfoAction {
             Elements links = doc.select(CSS_QUERY);
             return links.stream()
                     .map(linkCode -> linkCode.absUrl(LINK_ELEMENT_KEY))
-                    .filter(link -> isGoodLink(pageUrl, link))
+                    .filter(link -> FormatUrlAction.isGoodLink(pageUrl, link))
                     .collect(Collectors.toSet());
         }
         return Collections.emptySet();

@@ -30,6 +30,11 @@ public class LemmaServiceImpl implements LemmaService {
     }
 
     @Override
+    public LemmaEntity getBySiteAndLemma(SiteEntity site, String lemma) {
+        return lemmaRepository.findBySiteAndLemma(site, lemma).orElse(null);
+    }
+
+    @Override
     public LemmaEntity save(LemmaEntity lemma) {
         return lemmaRepository.saveAndFlush(lemma);
     }
@@ -54,13 +59,17 @@ public class LemmaServiceImpl implements LemmaService {
         Optional<LemmaEntity> lemmaBySiteOptional = lemmaRepository.findBySiteAndLemma(site, lemma);
         if (lemmaBySiteOptional.isPresent()) {
             LemmaEntity lemmaEntity = lemmaBySiteOptional.get();
-            lemmaEntity.setFrequency(lemmaEntity.getFrequency() + 1);
+            Integer oldFrequency = lemmaEntity.getFrequency();
+            lemmaEntity.setFrequency(oldFrequency + 1);
+            log.debug("Lemma '{}' is present in DB, frequency was {} now {}",
+                    lemma, oldFrequency, lemmaEntity.getFrequency());
             return lemmaEntity;
         }
         return createLemmaEntity(lemma, site);
     }
 
     private LemmaEntity createLemmaEntity(String lemma, SiteEntity site) {
+        log.debug("Creating new lemma '{}' for site {}", lemma, site.getUrl());
         LemmaEntity lemmaEntity = new LemmaEntity();
         lemmaEntity.setLemma(lemma);
         lemmaEntity.setSite(site);
