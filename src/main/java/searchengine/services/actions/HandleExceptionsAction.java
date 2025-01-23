@@ -30,4 +30,9 @@ public class HandleExceptionsAction {
             GenerateLockAction.unlockSiteParseWriteLock();
         }
     }
+
+    public static void handleInvalidSearchQueryExceptions(String query) {
+        InvalidSearchQueryException exception = new InvalidSearchQueryException(query);
+        log.error(exception.getMessage());
+    }
 }

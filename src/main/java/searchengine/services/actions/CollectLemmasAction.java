@@ -4,9 +4,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.Jsoup;
-import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Service;
-import searchengine.model.PageEntity;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -34,8 +32,8 @@ public class CollectLemmasAction {
         return Jsoup.clean(page.getContent(), Safelist.simpleText());
     }
 
-    public static Map<String, Integer> collectLemmasFromTextWithCount(String text) {
-        String[] words = getRussianWordsFromText(text);
+    public static Map<String, Integer> collectLemmasFromCleanedTextWithCount(String text) {
+        String[] words = getRussianWordsFromCleanedText(text);
         return Arrays.stream(words)
                 .filter(CollectLemmasAction::isWord)
                 .collect(Collectors.toMap(
@@ -44,7 +42,7 @@ public class CollectLemmasAction {
                         Integer::sum));
     }
 
-    private static String[] getRussianWordsFromText(String text) {
+    public static String[] getRussianWordsFromCleanedText(String text) {
         return text.toLowerCase(Locale.ROOT)
                 .replaceAll("([^а-я\\s])", " ")
                 .split("\\s+");
