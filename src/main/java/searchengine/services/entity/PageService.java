@@ -14,6 +14,8 @@ public interface PageService {
 
     Integer countBySite(SiteEntity siteEntity);
 
+    Integer countResponsivePagesBySite(SiteEntity site);
+
     Long countAll();
 
     PageEntity save(PageEntity page);
@@ -30,4 +32,6 @@ public interface PageService {
                          PageEntity page);
 
     boolean isSiteHomePageAccessible(SiteEntity site);
+
+    String getPageTitle(PageEntity page);
 }

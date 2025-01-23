@@ -4,6 +4,7 @@ package searchengine.services.entity.impl;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.jsoup.Jsoup;
 import org.springframework.stereotype.Service;
 import searchengine.exceptions.PageNotFromSiteException;
 import searchengine.model.PageEntity;
@@ -46,6 +47,11 @@ public class PageServiceImpl implements PageService {
     @Override
     public Integer countBySite(SiteEntity siteEntity) {
         return pageRepository.countBySite(siteEntity);
+    }
+
+    @Override
+    public Integer countResponsivePagesBySite(SiteEntity site) {
+        return pageRepository.countBySiteAndCode(site, ExtractConnectionInfoAction.PAGE_CODE_SUCCESS);
     }
 
     @Override
@@ -111,6 +117,11 @@ public class PageServiceImpl implements PageService {
         return homePageOptional
                 .filter(page -> ExtractConnectionInfoAction.isPageCodeSuccessful(page.getCode()))
                 .isPresent();
+    }
+
+    @Override
+    public String getPageTitle(PageEntity page) {
+        return Jsoup.parse(page.getContent()).title();
     }
 
 }
