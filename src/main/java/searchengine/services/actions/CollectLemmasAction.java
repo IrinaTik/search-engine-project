@@ -17,6 +17,10 @@ import java.util.stream.Collectors;
 public class CollectLemmasAction {
 
     private static final String[] PARTICLES_NAMES = new String[]{"МЕЖД", "ПРЕДЛ", "СОЮЗ", "МС"};
+    private static final String NOT_LOWCASE_RUSSIAN_LETTERS_OR_SPACE = "([^а-яъ\\p{Z}])";
+    private static final String TWO_OR_MORE_LOWCASE_RUSSIAN_LETTERS = "[а-яъ]{2,}";
+    private static final String ONE_OR_MORE_SPACE_SYMBOLS = "\\p{Z}+";
+    private static final String DOUBLE_STANDALONE_CONSONANTS = "([б-джзк-н-п-т-х-ь])\\1+[\\p{Z}\\p{Punct}]";
 
     private static LuceneMorphology luceneMorph;
 
@@ -28,8 +32,8 @@ public class CollectLemmasAction {
         }
     }
 
-    public static String cleanText (PageEntity page) {
-        return Jsoup.clean(page.getContent(), Safelist.simpleText());
+    public static String cleanText (String text) {
+        return Jsoup.parse(text).text().replaceAll("ё", "е");
     }
 
     public static Map<String, Integer> collectLemmasFromCleanedTextWithCount(String text) {
@@ -44,18 +48,19 @@ public class CollectLemmasAction {
 
     public static String[] getRussianWordsFromCleanedText(String text) {
         return text.toLowerCase(Locale.ROOT)
-                .replaceAll("([^а-я\\s])", " ")
-                .split("\\s+");
+                .replaceAll(NOT_LOWCASE_RUSSIAN_LETTERS_OR_SPACE, " ")
+                .replaceAll(DOUBLE_STANDALONE_CONSONANTS, " ")
+                .split(ONE_OR_MORE_SPACE_SYMBOLS);
     }
 
-    private static boolean isWord(String word) {
-        if (!word.isEmpty() && word.matches("[а-яё]+")) {
+    public static boolean isWord(String word) {
+        if (!word.isEmpty() && word.matches(TWO_OR_MORE_LOWCASE_RUSSIAN_LETTERS)) {
             return !isAnyWordBaseParticle(word);
         }
         return false;
     }
 
-    private static String getNormalFormOfWord(String word) {
+    public static String getNormalFormOfWord(String word) {
         return luceneMorph.getNormalForms(word).get(0);
     }
 

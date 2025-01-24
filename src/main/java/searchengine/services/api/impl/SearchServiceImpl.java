@@ -10,6 +10,7 @@ import searchengine.exceptions.InvalidSearchQueryException;
 import searchengine.model.*;
 import searchengine.services.actions.CollectLemmasAction;
 import searchengine.services.actions.GenerateSearchResponseAction;
+import searchengine.services.actions.GenerateSnippetAction;
 import searchengine.services.actions.HandleExceptionsAction;
 import searchengine.services.api.SearchService;
 import searchengine.services.entity.IndexService;
@@ -219,7 +220,7 @@ public class SearchServiceImpl implements SearchService {
                 .siteName(page.getSite().getName())
                 .uri(page.getRelativePath())
                 .title(pageService.getPageTitle(page))
-                .snippet("Empty test snippet")
+                .snippet(GenerateSnippetAction.createSnippet(page, queryLemmas))
                 .relevance(relevance)
                 .build();
     }
