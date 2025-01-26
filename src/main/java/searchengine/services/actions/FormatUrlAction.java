@@ -52,6 +52,10 @@ public class FormatUrlAction {
     }
 
     public static boolean isPagePartOfSite(String siteUrl, String pageUrl) {
-        return StringUtils.containsIgnoreCase(pageUrl, siteUrl);
+        String siteUrlWithEscapeEnd = siteUrl;
+        if (!StringUtils.endsWith(siteUrl, ESCAPE_SYMBOL)) {
+            siteUrlWithEscapeEnd = siteUrl + ESCAPE_SYMBOL;
+        }
+        return StringUtils.containsIgnoreCase(pageUrl, siteUrlWithEscapeEnd);
     }
 }
