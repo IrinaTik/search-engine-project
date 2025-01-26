@@ -96,4 +96,20 @@ public class FormatUrlActionTest {
         String homePageRelativePath = "/";
         assertTrue(FormatUrlAction.isHomePageRelativePath(homePageRelativePath));
     }
+
+    @Test
+    @DisplayName("Determine if page is part of site when it in fact is")
+    public void testIsPagePartOfSiteWhenItIs() {
+        String pageUrl = "https://test-site-url/path";
+        String siteUrl = "https://test-site-url";
+        assertTrue(FormatUrlAction.isPagePartOfSite(siteUrl, pageUrl));
+    }
+
+    @Test
+    @DisplayName("Determine if page is part of site when it in fact isn't")
+    public void testIsPagePartOfSiteWhenItIsNot() {
+        String pageUrl = "https://test-site-url-not/path";
+        String siteUrl = "https://test-site-url";
+        assertFalse(FormatUrlAction.isPagePartOfSite(siteUrl, pageUrl));
+    }
 }
