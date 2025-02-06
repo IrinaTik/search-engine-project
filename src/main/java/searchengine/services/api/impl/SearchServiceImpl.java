@@ -2,8 +2,8 @@ package searchengine.services.api.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
-import searchengine.config.SitesList;
 import searchengine.dto.search.SearchData;
 import searchengine.dto.search.SearchResponse;
 import searchengine.exceptions.InvalidSearchQueryException;
@@ -30,16 +30,21 @@ import java.util.stream.Collectors;
 public class SearchServiceImpl implements SearchService {
 
     private static final Double LEMMA_FREQUENCY_PERCENT = 0.9;
+    public static final Float DEFAULT_MAX_PAGE_RELEVANCE = 1f;
 
-    private final SitesList sites;
     private final SiteService siteService;
     private final PageService pageService;
     private final LemmaService lemmaService;
     private final IndexService indexService;
 
+    private String currentQuery = "";
+    private List<SiteEntity> currentSiteListForSearch = new ArrayList<>();
+    private Map<PageEntity, Float> sortedPagesWithRelativeRelevance = new HashMap<>();
+    private Integer totalPagesCoveringQueryCount = 0;
+
     @Override
     public SearchResponse getSearchResults(String query, String siteUrl, Integer offset, Integer limit) {
-        Instant start = Instant.now();
+        log.info("Search for query '{}' started", query);
         if (query.isBlank()) {
             return GenerateSearchResponseAction.getEmptyQueryResponse();
         }
@@ -47,15 +52,53 @@ public class SearchServiceImpl implements SearchService {
         if (siteList.stream().anyMatch(site -> !site.getStatus().equals(SiteIndexingStatus.INDEXED))) {
             return GenerateSearchResponseAction.getSiteIsNotIndexedResponse(siteUrl);
         }
-        List<SearchData> searchData = computeSearchDataForQuery(query, siteList);
+        List<SearchData> searchData = computeSearchDataForQuery(query, siteList, offset, limit);
+        log.info("Total results count for query '{}' in {} : {}",
+                query, siteUrl != null ? "site " + siteUrl : "all sites", totalPagesCoveringQueryCount);
+        return GenerateSearchResponseAction.getAllGoodResponse(searchData, totalPagesCoveringQueryCount, query);
+    }
+
+    private List<SearchData> computeSearchDataForQuery(String query,
+                                                       List<SiteEntity> siteList,
+                                                       Integer offset,
+                                                       Integer limit) {
+        Instant start = Instant.now();
+        query = query.trim();
+        String cleanQueryText = CollectLemmasAction.cleanText(query);
+        Set<String> queryLemmas = CollectLemmasAction.collectLemmasFromCleanedTextWithCount(cleanQueryText).keySet();
+        if (!isSameQuery(query, siteList)) {
+            setCurrentValues(query, siteList);
+            sortedPagesWithRelativeRelevance = getPagesSortedByRelativeRelevanceCoveringQuery(queryLemmas);
+            totalPagesCoveringQueryCount = sortedPagesWithRelativeRelevance.size();
+        }
+        Map<PageEntity, Float> pagesForShow = getPagesToShowInResponse(sortedPagesWithRelativeRelevance, offset, limit);
+        List<SearchData> searchData = getSearchDataForQuery(pagesForShow, queryLemmas);
         Instant end = Instant.now();
         Duration duration = Duration.between(start, end);
-        log.info("Searching for query {} complete in {} min {} sec {} ms",
-                query,
-                duration.toMinutes(),
-                duration.toSecondsPart(),
-                duration.toMillisPart());
-        return GenerateSearchResponseAction.getAllGoodResponse(searchData, query);
+        log.info("Searching for query '{}' with offset {} complete in {} min {} sec {} ms",
+                query, offset, duration.toMinutes(), duration.toSecondsPart(), duration.toMillisPart());
+        return searchData;
+    }
+
+    private boolean isSameQuery(String query, List<SiteEntity> siteList) {
+        return StringUtils.equalsIgnoreCase(query, currentQuery) && isSiteListsEqual(siteList, currentSiteListForSearch);
+    }
+
+    private boolean isSiteListsEqual(List<SiteEntity> siteList, List<SiteEntity> currentSiteListForSearch) {
+        if (siteList.size() != currentSiteListForSearch.size()) {
+            return false;
+        }
+        for (SiteEntity siteEntity : currentSiteListForSearch) {
+            if (siteList.stream().noneMatch(site -> Objects.equals(site.getId(), siteEntity.getId()))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void setCurrentValues(String query, List<SiteEntity> siteList) {
+        currentQuery = query;
+        currentSiteListForSearch = siteList;
     }
 
     private List<SiteEntity> getSitesForSearch(String siteUrl) {
@@ -64,24 +107,18 @@ public class SearchServiceImpl implements SearchService {
                 : siteService.getAll();
     }
 
-    private List<SearchData> computeSearchDataForQuery(String query, List<SiteEntity> siteList) {
+    private Map<PageEntity, Float> getPagesSortedByRelativeRelevanceCoveringQuery(Set<String> queryLemmas) {
         try {
-            Set<String> queryLemmas = CollectLemmasAction.collectLemmasFromCleanedTextWithCount(
-                    CollectLemmasAction.cleanText(query)).keySet();
             Map<PageEntity, Float> pagesRelevantToQueryWithAbsRelevance =
-                    getPagesRelevantToQueryWithAbsRelevance(siteList, queryLemmas);
+                    getPagesRelevantToQueryWithAbsRelevance(currentSiteListForSearch, queryLemmas);
             if (pagesRelevantToQueryWithAbsRelevance.isEmpty()) {
-                return Collections.emptyList();
+                return Collections.emptyMap();
             }
             Float maxAbsRelevance = findMaxPageRelevance(pagesRelevantToQueryWithAbsRelevance);
-            Map<PageEntity, Float> sortedPagesWithRelativeRelevance =
-                    getSortedPagesWithRelativeRelevance(pagesRelevantToQueryWithAbsRelevance, maxAbsRelevance);
-            List<SearchData> searchResponseFromRelevantPages =
-                    getSearchDataFromRelevantPages(sortedPagesWithRelativeRelevance, queryLemmas);
-            return searchResponseFromRelevantPages;
+            return getSortedPagesWithRelativeRelevance(pagesRelevantToQueryWithAbsRelevance, maxAbsRelevance);
         } catch (InvalidSearchQueryException e) {
-            HandleExceptionsAction.handleInvalidSearchQueryExceptions(query);
-            return Collections.emptyList();
+            HandleExceptionsAction.handleInvalidSearchQueryExceptions(currentQuery);
+            return Collections.emptyMap();
         }
     }
 
@@ -182,6 +219,10 @@ public class SearchServiceImpl implements SearchService {
 
     private Float findMaxPageRelevance(Map<PageEntity, Float> pagesWithAbsRelevance) {
         Optional<Float> maxAbsRelevance = pagesWithAbsRelevance.values().stream().max(Float::compare);
+        if (maxAbsRelevance.isEmpty()) {
+            log.error("Unable to calculate max page relevance for query {}", currentQuery);
+            return DEFAULT_MAX_PAGE_RELEVANCE;
+        }
         return maxAbsRelevance.get();
     }
 
@@ -189,7 +230,7 @@ public class SearchServiceImpl implements SearchService {
                                                                        Float maxAbsRelevance) {
         Map<PageEntity, Float> pagesWithRelativeRelevance = pagesWithAbsRelevance.entrySet().stream()
                 .collect(Collectors.toMap(
-                        entry -> entry.getKey(),
+                        Map.Entry::getKey,
                         entry -> entry.getValue() / maxAbsRelevance,
                         (oldValue, newValue) -> oldValue));
         return pagesWithRelativeRelevance.entrySet().stream()
@@ -201,17 +242,40 @@ public class SearchServiceImpl implements SearchService {
                         LinkedHashMap::new));
     }
 
+    private Map<PageEntity, Float> getPagesToShowInResponse(Map<PageEntity, Float> sortedPagesWithRelativeRelevance,
+                                                            Integer offset,
+                                                            Integer limit) {
+        if (sortedPagesWithRelativeRelevance.size() <= limit) {
+            return sortedPagesWithRelativeRelevance;
+        }
+        return sortedPagesWithRelativeRelevance.entrySet().stream()
+                .skip(offset)
+                .limit(limit)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue,
+                        LinkedHashMap::new));
+    }
+
+    private List<SearchData> getSearchDataForQuery(Map<PageEntity, Float> pagesForShow, Set<String> queryLemmas) {
+        if (pagesForShow == null || pagesForShow.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return getSearchDataFromRelevantPages(pagesForShow, queryLemmas);
+    }
+
     private List<SearchData> getSearchDataFromRelevantPages(Map<PageEntity, Float> pagesWithRelativeRelevance,
                                                             Set<String> queryLemmas) {
-        List<SearchData> totalSearchData = new ArrayList<>();
+        List<SearchData> data = new ArrayList<>();
         for (PageEntity pageEntity : pagesWithRelativeRelevance.keySet()) {
             SearchData pageSearchData = getSearchDataForPage(
                     pageEntity,
                     pagesWithRelativeRelevance.get(pageEntity),
                     queryLemmas);
-            totalSearchData.add(pageSearchData);
+            data.add(pageSearchData);
         }
-        return totalSearchData;
+        return data;
     }
 
     public SearchData getSearchDataForPage(PageEntity page, Float relevance, Set<String> queryLemmas) {
@@ -224,7 +288,5 @@ public class SearchServiceImpl implements SearchService {
                 .relevance(relevance)
                 .build();
     }
-
-
 
 }

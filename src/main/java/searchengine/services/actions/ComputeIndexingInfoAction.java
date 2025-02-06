@@ -44,7 +44,7 @@ public class ComputeIndexingInfoAction {
         List<IndexEntity> indexesByPage = new ArrayList<>();
         PageIndexingData pageIndexingData = new PageIndexingData(page, lemmasByPage, indexesByPage);
         for (String lemma : lemmasFromTextWithCount.keySet()) {
-            LemmaEntity lemmaEntity = lemmaService.correctLemmaFrequencyBySite(lemma, page.getSite());
+            LemmaEntity lemmaEntity = lemmaService.increaseLemmaFrequencyBySite(lemma, page.getSite());
             Float rank = Float.valueOf(lemmasFromTextWithCount.get(lemma));
             IndexEntity indexEntity = indexService.createIndexForPage(lemmaEntity, rank, page);
             lemmasByPage.add(lemmaEntity);

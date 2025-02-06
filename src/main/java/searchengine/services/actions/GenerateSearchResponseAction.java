@@ -13,9 +13,9 @@ public class GenerateSearchResponseAction {
     private static final String SITE_IS_NOT_INDEXED_ERROR = "Индексация не проведена";
 
     private static final SearchResponse EMPTY_QUERY_RESPONSE =
-            new SearchResponse(false, EMPTY_QUERY_ERROR, 0, null);
+            SearchResponse.buildErrorSearchResponse(EMPTY_QUERY_ERROR);
     private static final SearchResponse SITE_IS_NOT_INDEXED_RESPONSE =
-            new SearchResponse(false, SITE_IS_NOT_INDEXED_ERROR, 0, null);
+            SearchResponse.buildErrorSearchResponse(SITE_IS_NOT_INDEXED_ERROR);
 
     public static SearchResponse getEmptyQueryResponse() {
         log.error("Empty search query was fired");
@@ -27,11 +27,11 @@ public class GenerateSearchResponseAction {
         return SITE_IS_NOT_INDEXED_RESPONSE;
     }
 
-    public static SearchResponse getAllGoodResponse(List<SearchData> searchDataList, String query) {
+    public static SearchResponse getAllGoodResponse(List<SearchData> searchDataList, Integer totalDataCount, String query) {
         if (searchDataList == null || searchDataList.isEmpty()) {
             return SearchResponse.buildSearchResponseWithoutData(query);
         }
-        return SearchResponse.buildSearchResponseWithData(searchDataList);
+        return SearchResponse.buildSearchResponseWithData(searchDataList, totalDataCount);
     }
 
 }

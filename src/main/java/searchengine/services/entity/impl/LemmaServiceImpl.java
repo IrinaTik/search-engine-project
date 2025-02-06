@@ -55,7 +55,7 @@ public class LemmaServiceImpl implements LemmaService {
     }
 
     @Override
-    public LemmaEntity correctLemmaFrequencyBySite(String lemma, SiteEntity site) {
+    public LemmaEntity increaseLemmaFrequencyBySite(String lemma, SiteEntity site) {
         Optional<LemmaEntity> lemmaBySiteOptional = lemmaRepository.findBySiteAndLemma(site, lemma);
         if (lemmaBySiteOptional.isPresent()) {
             LemmaEntity lemmaEntity = lemmaBySiteOptional.get();
