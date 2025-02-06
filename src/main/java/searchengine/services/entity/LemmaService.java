@@ -22,7 +22,7 @@ public interface LemmaService {
 
     void deleteAll();
 
-    LemmaEntity correctLemmaFrequencyBySite(String lemma, SiteEntity site);
+    LemmaEntity increaseLemmaFrequencyBySite(String lemma, SiteEntity site);
 
     void decreaseLemmaFrequencyInDatabase(LemmaEntity lemmaEntity);
 }
