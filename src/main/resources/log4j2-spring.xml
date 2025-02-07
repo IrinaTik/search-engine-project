@@ -5,7 +5,7 @@
         <Property name="ERROR_LOG_PATH" value="errors" />
         <Property name="INFO_LOG_PATH" value="info" />
         <Property name="LOG_FILE_NAME" value="search-engine-log4j2" />
-        <Property name="CONSOLE_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} %magenta{%-5level } %yellow{[%t]} %blue{%c{10}}: %msg%n%throwable"/>
+        <Property name="CONSOLE_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} %clr{%-5level }{magenta} %clr{[%t]}{yellow} %clr{%c{10}}{blue}: %msg%n%throwable"/>
         <Property name="LOG_FILE_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] : %msg%n%throwable"/>
         <Property name="ERROR_LOG_FILE_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] @line:%L : %msg%n%throwable"/>
         <Property name="FILE_ROLLOVER_SIZE" value="100 MB"/>

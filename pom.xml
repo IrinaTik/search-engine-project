@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>SearchEngine</artifactId>
-    <version>2.0.0</version>
+    <version>1.5.0</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -116,5 +116,25 @@
             <version>${lucene.version}</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>searchengine.Application</mainClass>
+                    <layout>JAR</layout>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
