@@ -2,8 +2,8 @@ server:
   port: 8080
 spring:
   datasource:
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:password}
     url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
   jpa:
     properties:
@@ -12,6 +12,9 @@ spring:
     hibernate:
       ddl-auto: update
       show-sql: true
+  output:
+    ansi:
+      enabled: always
 
 indexing-settings:
   sites:
