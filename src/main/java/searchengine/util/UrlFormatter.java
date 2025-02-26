@@ -1,4 +1,4 @@
-package searchengine.services.actions;
+package searchengine.util;
 
 import org.apache.commons.lang3.StringUtils;
 import searchengine.exceptions.PageNotFromSiteException;
@@ -6,7 +6,7 @@ import searchengine.model.SiteEntity;
 
 import java.util.List;
 
-public class FormatUrlAction {
+public class UrlFormatter {
 
     private static final String SCROLLUP_LINK = "#";
     private static final String ESCAPE_SYMBOL = "/";

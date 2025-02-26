@@ -7,11 +7,9 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 // Lombok
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
 // Database
 @Entity
 @Table(name = "site")

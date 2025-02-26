@@ -1,9 +1,9 @@
 package searchengine.exceptions;
 
-import searchengine.services.actions.GenerateIndexingResponseAction;
+import searchengine.util.IndexingResponseGenerator;
 
 public class IndexingStoppedByUserException extends RuntimeException {
     public IndexingStoppedByUserException() {
-        super(GenerateIndexingResponseAction.INDEXING_STOPPED_BY_USER_ERROR);
+        super(IndexingResponseGenerator.INDEXING_STOPPED_BY_USER_ERROR);
     }
 }

@@ -7,14 +7,12 @@ import java.util.Objects;
 import java.util.Set;
 
 // Lombok
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
 // Database
 @Entity
-@Table(name = "page", indexes = @Index(name = "path_idx", columnList = "path"))
+@Table(name = "page", indexes = @Index(name = "path_site_idx", columnList = "path, site_id"))
 public class PageEntity {
 
     @Id

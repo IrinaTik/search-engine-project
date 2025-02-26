@@ -1,6 +1,8 @@
 package searchengine.services.actions;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.stereotype.Service;
 import searchengine.dto.indexing.PageIndexingData;
 import searchengine.model.IndexEntity;
 import searchengine.model.LemmaEntity;
@@ -15,17 +17,21 @@ import java.util.List;
 import java.util.Map;
 
 @Log4j2
+@Service
+@RequiredArgsConstructor
 public class ComputeIndexingInfoAction {
 
-    public static PageIndexingData computeIndexingInfoForPage(LemmaService lemmaService,
-                                                              IndexService indexService,
-                                                              PageEntity page) {
+    private final CollectLemmasAction collectLemmasAction;
+
+    public PageIndexingData computeIndexingInfoForPage(LemmaService lemmaService,
+                                                       IndexService indexService,
+                                                       PageEntity page) {
         log.info("Computing indexing info for page {} started",
                 page.getSite().getUrl() + page.getRelativePath());
         Instant start = Instant.now();
-        String cleanedPageContent = CollectLemmasAction.cleanText(page.getContent());
+        String cleanedPageContent = collectLemmasAction.cleanText(page.getContent());
         Map<String, Integer> lemmasFromTextWithCount =
-                CollectLemmasAction.collectLemmasFromCleanedTextWithCount(cleanedPageContent);
+                collectLemmasAction.collectLemmasFromCleanedTextWithCount(cleanedPageContent);
         PageIndexingData pageIndexingData = computePageIndexingData(
                 lemmaService, indexService, lemmasFromTextWithCount, page);
         Instant end = Instant.now();
@@ -36,10 +42,10 @@ public class ComputeIndexingInfoAction {
         return pageIndexingData;
     }
 
-    private static PageIndexingData computePageIndexingData(LemmaService lemmaService,
-                                                            IndexService indexService,
-                                                            Map<String, Integer> lemmasFromTextWithCount,
-                                                            PageEntity page) {
+    private PageIndexingData computePageIndexingData(LemmaService lemmaService,
+                                                     IndexService indexService,
+                                                     Map<String, Integer> lemmasFromTextWithCount,
+                                                     PageEntity page) {
         List<LemmaEntity> lemmasByPage = new ArrayList<>();
         List<IndexEntity> indexesByPage = new ArrayList<>();
         PageIndexingData pageIndexingData = new PageIndexingData(page, lemmasByPage, indexesByPage);

@@ -6,14 +6,12 @@ import lombok.*;
 import java.util.Objects;
 
 // Lombok
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
 // Database
 @Entity
-@Table(name = "lemma", uniqueConstraints = { @UniqueConstraint(columnNames = { "lemma", "site_id" }) })
+@Table(name = "lemma", indexes = @Index(name = "lemma_site_idx", columnList = "lemma, site_id", unique = true))
 public class LemmaEntity {
 
     @Id

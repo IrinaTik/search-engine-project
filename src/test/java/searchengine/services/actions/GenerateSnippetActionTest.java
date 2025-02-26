@@ -12,6 +12,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class GenerateSnippetActionTest {
 
+    private final CollectLemmasAction collectLemmasAction = new CollectLemmasAction();
+    private final GenerateSnippetAction snippetAction = new GenerateSnippetAction(collectLemmasAction);
+
     @Test
     @DisplayName("Create snippet")
     public void testCreateSnippet() {
@@ -34,7 +37,7 @@ public class GenerateSnippetActionTest {
         page.setContent(pageContent);
         page.setRelativePath("/path");
         page.setSite(site);
-        String snippet = GenerateSnippetAction.createSnippet(page, queryLemmas);
+        String snippet = snippetAction.createSnippet(page, queryLemmas);
         assertEquals(expected, snippet);
     }
 }

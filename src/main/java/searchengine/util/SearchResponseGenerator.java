@@ -1,4 +1,4 @@
-package searchengine.services.actions;
+package searchengine.util;
 
 import lombok.extern.log4j.Log4j2;
 import searchengine.dto.search.SearchData;
@@ -7,7 +7,7 @@ import searchengine.dto.search.SearchResponse;
 import java.util.List;
 
 @Log4j2
-public class GenerateSearchResponseAction {
+public class SearchResponseGenerator {
 
     private static final String EMPTY_QUERY_ERROR = "Задан пустой поисковый запрос";
     private static final String SITE_IS_NOT_INDEXED_ERROR = "Индексация не проведена";

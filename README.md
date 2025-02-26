@@ -71,12 +71,10 @@ Lombok, JSOUP, Lucene Morphology Library, MySQL, Mockito, JUnit, Log4j2.*
 Результаты поиска выводятся в порядке убывания релевантности страницы 
 поисковому запросу. Под каждой страницей представлен сниппет со словами 
 из поискового запроса.
-
 <img alt="Поисковый запрос" height="500" src="src\main\resources\images\GoodSearch.png"/>
 <img height="240" src="src\main\resources\images\GoodSearchResponse.png"/>
 
-Однако при поиске может и не быть результатов
-
+Однако при поиске может и не быть результатов. Например:
 <img alt="Поисковый запрос" height="200" src="src\main\resources\images\BadSearch.png"/>
 <img height="100" src="src\main\resources\images\BadSearchResponse.png"/>
 
@@ -86,7 +84,6 @@ Lombok, JSOUP, Lucene Morphology Library, MySQL, Mockito, JUnit, Log4j2.*
 
 Ниже для примера приведены логи при получении статистики и начале полной 
 индексации, когда в конфигурационном файле указаны два сайта:
-
 <img alt="Пример логов" height="120" src="src\main\resources\images\StartFullIndexingLog.png"/>
 
 Логи записываются в папку logs, которая автоматически создается в той 
@@ -100,7 +97,6 @@ Lombok, JSOUP, Lucene Morphology Library, MySQL, Mockito, JUnit, Log4j2.*
 с названием формата <текущий год>-<текущий месяц> и нумеруются.
 
 Пример структуры директории логов представлен ниже:
-
 <img height="200" src="src\main\resources\images\LogsDir.png"/>
 
 Для изменения настроек логирования нужно отредактировать файл 

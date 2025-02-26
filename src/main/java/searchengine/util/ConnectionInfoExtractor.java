@@ -1,4 +1,4 @@
-package searchengine.services.actions;
+package searchengine.util;
 
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Log4j2
-public class ExtractConnectionInfoAction {
+public class ConnectionInfoExtractor {
 
     private static final String CSS_QUERY = "a[href]";
     private static final String LINK_ELEMENT_KEY = "href";
@@ -70,7 +70,7 @@ public class ExtractConnectionInfoAction {
             Elements links = doc.select(CSS_QUERY);
             return links.stream()
                     .map(linkCode -> linkCode.absUrl(LINK_ELEMENT_KEY))
-                    .filter(link -> FormatUrlAction.isGoodLink(pageUrl, link))
+                    .filter(link -> UrlFormatter.isGoodLink(pageUrl, link))
                     .collect(Collectors.toSet());
         }
         return Collections.emptySet();
