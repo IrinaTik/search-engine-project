@@ -1,11 +1,11 @@
-package searchengine.services.actions;
+package searchengine.util;
 
 import lombok.extern.log4j.Log4j2;
 import searchengine.dto.indexing.IndexingResponse;
 import searchengine.model.SiteIndexingStatus;
 
 @Log4j2
-public class GenerateIndexingResponseAction {
+public class IndexingResponseGenerator {
 
     public static final String INDEXING_STOPPED_BY_USER_ERROR = "Индексация прервана пользователем";
     public static final String INDEXING_ALREADY_STARTED_ERROR = "Индексация уже запущена";

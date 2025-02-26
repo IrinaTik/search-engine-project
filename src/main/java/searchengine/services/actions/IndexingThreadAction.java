@@ -16,6 +16,9 @@ import searchengine.services.entity.IndexService;
 import searchengine.services.entity.LemmaService;
 import searchengine.services.entity.PageService;
 import searchengine.services.entity.SiteService;
+import searchengine.util.ExceptionsHandler;
+import searchengine.util.IndexingResponseGenerator;
+import searchengine.util.LockGenerator;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -35,6 +38,8 @@ public class IndexingThreadAction {
     private final PageService pageService;
     private final LemmaService lemmaService;
     private final IndexService indexService;
+    private final ComputeIndexingInfoAction computeIndexingInfoAction;
+    private final PrepareDatabaseBeforeIndexingAction prepareDatabaseAction;
 
     public IndexingResponse indexingOneSite(String url,
                                             String name,
@@ -45,7 +50,7 @@ public class IndexingThreadAction {
         siteService.save(site);
         if (isCancelledStopIndexing) {
             handleStopByUser(site);
-            return GenerateIndexingResponseAction.getIndexingStoppedByUserResponse();
+            return IndexingResponseGenerator.getIndexingStoppedByUserResponse();
         }
         IndexingResponse indexingOneSiteResponse = gatherSiteIndexingInfo(site);
         Instant end = Instant.now();
@@ -58,17 +63,17 @@ public class IndexingThreadAction {
 
     private void handleStopByUser(SiteEntity site) {
         try {
-            GenerateLockAction.lockSiteParseWriteLock();
+            LockGenerator.lockSiteParseWriteLock();
             siteService.updateSiteStatusInfo(
                     SiteIndexingStatus.FAILED,
-                    GenerateIndexingResponseAction.INDEXING_STOPPED_BY_USER_ERROR,
+                    IndexingResponseGenerator.INDEXING_STOPPED_BY_USER_ERROR,
                     site);
             siteService.save(site);
             log.info("Site {} was saved as FAILED because of user stop", site.getUrl());
         } catch (Exception ex) {
             log.error("Exception while saving INDEXING STOPPED BY USER info for site {}", site.getUrl(), ex);
         } finally {
-            GenerateLockAction.unlockSiteParseWriteLock();
+            LockGenerator.unlockSiteParseWriteLock();
         }
     }
 
@@ -80,9 +85,9 @@ public class IndexingThreadAction {
             indexingResponse = getResponseAccordingToSiteStatus(site);
         } catch (IndexingStoppedByUserException ex) {
             handleStopByUser(site);
-            indexingResponse = GenerateIndexingResponseAction.getIndexingStoppedByUserResponse();
+            indexingResponse = IndexingResponseGenerator.getIndexingStoppedByUserResponse();
         } catch (Exception ex) {
-            HandleExceptionsAction.handleUnexpectedIndexingException(siteService, site, ex);
+            ExceptionsHandler.handleUnexpectedIndexingException(siteService, site, ex);
         } finally {
             log.info("Indexing for site {} is completed with status {}", site.getUrl(), site.getStatus());
         }
@@ -91,7 +96,8 @@ public class IndexingThreadAction {
 
     private void parseSite(SiteEntity site) {
         ForkJoinPool forkJoinPool = new ForkJoinPool();
-        ParseAction parser = new ParseAction(site.getUrl(), site, jsoupConfig, siteService, pageService, lemmaService, indexService);
+        ParseAction parser = new ParseAction(site.getUrl(), site,
+                jsoupConfig, siteService, pageService, lemmaService, indexService, computeIndexingInfoAction);
         forkJoinPool.invoke(parser);
         if (isCancelledStopIndexing) {
             forkJoinPool.shutdownNow();
@@ -101,19 +107,19 @@ public class IndexingThreadAction {
 
     private IndexingResponse getResponseAccordingToSiteStatus(SiteEntity site) {
         if (site.getStatus() == SiteIndexingStatus.FAILED) {
-            return GenerateIndexingResponseAction.getIndexingFailedErrorResponse(site.getUrl(), site.getLastError());
+            return IndexingResponseGenerator.getIndexingFailedErrorResponse(site.getUrl(), site.getLastError());
         }
         if (!pageService.isSiteHomePageAccessible(site)) {
             siteService.updateSiteStatusInfo(
                     SiteIndexingStatus.FAILED,
-                    GenerateIndexingResponseAction.SITE_HOME_PAGE_NOT_ACCESSIBLE,
+                    IndexingResponseGenerator.SITE_HOME_PAGE_NOT_ACCESSIBLE,
                     site);
             siteService.save(site);
-            return GenerateIndexingResponseAction.getSiteHomePageNotAccessibleResponse(site.getUrl());
+            return IndexingResponseGenerator.getSiteHomePageNotAccessibleResponse(site.getUrl());
         }
         siteService.updateSiteStatusInfo(SiteIndexingStatus.INDEXED, "", site);
         siteService.save(site);
-        return GenerateIndexingResponseAction.getAllGoodResponse();
+        return IndexingResponseGenerator.getAllGoodResponse();
     }
 
     @Transactional
@@ -126,8 +132,7 @@ public class IndexingThreadAction {
         }
         PageEntity page = pageService.getByAbsPathAndSite(url, site);
         if (page != null) {
-            PrepareDatabaseBeforeIndexingAction.prepareDatabaseBeforePartialIndexingStart(
-                    pageService, lemmaService, indexService, page);
+            prepareDatabaseAction.prepareDatabaseBeforePartialIndexingStart(page);
         }
         parseAddedPage(url, site);
         getResponseAccordingToSiteStatus(site);
@@ -135,7 +140,8 @@ public class IndexingThreadAction {
     }
 
     private void parseAddedPage(String url, SiteEntity site) {
-        ParseAction parser = new ParseAction(url, site, jsoupConfig, siteService, pageService, lemmaService, indexService);
+        ParseAction parser = new ParseAction(url, site,
+                jsoupConfig, siteService, pageService, lemmaService, indexService, computeIndexingInfoAction);
         parser.invoke();
     }
 

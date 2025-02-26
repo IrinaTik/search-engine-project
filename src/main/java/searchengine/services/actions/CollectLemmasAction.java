@@ -30,43 +30,43 @@ public class CollectLemmasAction {
         }
     }
 
-    public static String cleanText (String text) {
+    public String cleanText (String text) {
         return Jsoup.parse(text).text().replaceAll("ё", "е");
     }
 
-    public static Map<String, Integer> collectLemmasFromCleanedTextWithCount(String text) {
+    public Map<String, Integer> collectLemmasFromCleanedTextWithCount(String text) {
         String[] words = getRussianWordsFromCleanedText(text);
         return Arrays.stream(words)
-                .filter(CollectLemmasAction::isWord)
+                .filter(this::isWord)
                 .collect(Collectors.toMap(
                         word -> getNormalFormOfWord(word),
                         count -> 1,
                         Integer::sum));
     }
 
-    public static String[] getRussianWordsFromCleanedText(String text) {
+    public String[] getRussianWordsFromCleanedText(String text) {
         return text.toLowerCase(Locale.ROOT)
                 .replaceAll(NOT_LOWCASE_RUSSIAN_LETTERS_OR_SPACE, " ")
                 .replaceAll(DOUBLE_STANDALONE_CONSONANTS, " ")
                 .split(ONE_OR_MORE_SPACE_SYMBOLS);
     }
 
-    public static boolean isWord(String word) {
+    public boolean isWord(String word) {
         if (!word.isEmpty() && word.matches(TWO_OR_MORE_LOWCASE_RUSSIAN_LETTERS)) {
             return !isAnyWordBaseParticle(word);
         }
         return false;
     }
 
-    public static String getNormalFormOfWord(String word) {
+    public String getNormalFormOfWord(String word) {
         return luceneMorph.getNormalForms(word).get(0);
     }
 
-    private static boolean isAnyWordBaseParticle(String word) {
-        return luceneMorph.getMorphInfo(word).stream().anyMatch(CollectLemmasAction::isParticle);
+    private boolean isAnyWordBaseParticle(String word) {
+        return luceneMorph.getMorphInfo(word).stream().anyMatch(this::isParticle);
     }
 
-    private static boolean isParticle(String form) {
+    private boolean isParticle(String form) {
         for (String particle : PARTICLES_NAMES) {
             if (form.contains(particle)) {
                 return true;

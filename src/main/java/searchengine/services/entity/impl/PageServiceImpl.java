@@ -1,6 +1,5 @@
 package searchengine.services.entity.impl;
 
-
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -10,8 +9,8 @@ import searchengine.exceptions.PageNotFromSiteException;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.repository.PageRepository;
-import searchengine.services.actions.ExtractConnectionInfoAction;
-import searchengine.services.actions.FormatUrlAction;
+import searchengine.util.ConnectionInfoExtractor;
+import searchengine.util.UrlFormatter;
 import searchengine.services.entity.PageService;
 
 import java.util.Collections;
@@ -27,8 +26,8 @@ public class PageServiceImpl implements PageService {
 
     @Override
     public PageEntity getByRelativePathAndSite(String relativePath, SiteEntity site) {
-        if (!FormatUrlAction.isHomePageRelativePath(relativePath)) {
-            relativePath = FormatUrlAction.removeEscapeEnd(relativePath);
+        if (!UrlFormatter.isHomePageRelativePath(relativePath)) {
+            relativePath = UrlFormatter.removeEscapeEnd(relativePath);
         }
         return pageRepository.findByRelativePathAndSite(relativePath, site).orElse(null);
     }
@@ -36,7 +35,7 @@ public class PageServiceImpl implements PageService {
     @Override
     public PageEntity getByAbsPathAndSite(String absPath, SiteEntity site) {
         try {
-            String relativePath = FormatUrlAction.convertAbsPathToRelativePath(absPath, site);
+            String relativePath = UrlFormatter.convertAbsPathToRelativePath(absPath, site);
             return getByRelativePathAndSite(relativePath, site);
         } catch (PageNotFromSiteException ex) {
             log.error("Cannot get page by absolute path", ex);
@@ -51,7 +50,7 @@ public class PageServiceImpl implements PageService {
 
     @Override
     public Integer countResponsivePagesBySite(SiteEntity site) {
-        return pageRepository.countBySiteAndCode(site, ExtractConnectionInfoAction.PAGE_CODE_SUCCESS);
+        return pageRepository.countBySiteAndCode(site, ConnectionInfoExtractor.PAGE_CODE_SUCCESS);
     }
 
     @Override
@@ -61,8 +60,8 @@ public class PageServiceImpl implements PageService {
 
     @Override
     public PageEntity save(PageEntity page) {
-        if (!FormatUrlAction.isHomePageRelativePath(page.getRelativePath())) {
-            String relativePathWithoutEscapeEnd = FormatUrlAction.removeEscapeEnd(page.getRelativePath());
+        if (!UrlFormatter.isHomePageRelativePath(page.getRelativePath())) {
+            String relativePathWithoutEscapeEnd = UrlFormatter.removeEscapeEnd(page.getRelativePath());
             page.setRelativePath(relativePathWithoutEscapeEnd);
         }
         return pageRepository.saveAndFlush(page);
@@ -80,7 +79,7 @@ public class PageServiceImpl implements PageService {
 
     @Override
     public PageEntity createPageByAbsPathAndSitePath(String path, SiteEntity site) {
-        String relativePath = FormatUrlAction.convertAbsPathToRelativePath(path, site);
+        String relativePath = UrlFormatter.convertAbsPathToRelativePath(path, site);
         PageEntity page = createPageByRelativePath(relativePath);
         page.setSite(site);
         return page;
@@ -113,9 +112,9 @@ public class PageServiceImpl implements PageService {
     @Override
     public boolean isSiteHomePageAccessible(SiteEntity site) {
         Optional<PageEntity> homePageOptional =
-                pageRepository.findByRelativePathAndSite(FormatUrlAction.SITE_HOME_PAGE_RELATIVE_PATH, site);
+                pageRepository.findByRelativePathAndSite(UrlFormatter.SITE_HOME_PAGE_RELATIVE_PATH, site);
         return homePageOptional
-                .filter(page -> ExtractConnectionInfoAction.isPageCodeSuccessful(page.getCode()))
+                .filter(page -> ConnectionInfoExtractor.isPageCodeSuccessful(page.getCode()))
                 .isPresent();
     }
 

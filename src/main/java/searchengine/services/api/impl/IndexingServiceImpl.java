@@ -10,12 +10,14 @@ import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingResponse;
 import searchengine.model.SiteIndexingStatus;
-import searchengine.services.actions.*;
+import searchengine.services.actions.IndexingThreadAction;
+import searchengine.services.actions.ParseAction;
+import searchengine.services.actions.PrepareDatabaseBeforeIndexingAction;
 import searchengine.services.api.IndexingService;
-import searchengine.services.entity.IndexService;
-import searchengine.services.entity.LemmaService;
-import searchengine.services.entity.PageService;
 import searchengine.services.entity.SiteService;
+import searchengine.util.IndexingResponseGenerator;
+import searchengine.util.LockGenerator;
+import searchengine.util.UrlFormatter;
 
 import java.util.List;
 import java.util.Objects;
@@ -36,27 +38,24 @@ public class IndexingServiceImpl implements IndexingService {
 
     private final SitesList sites;
     private final SiteService siteService;
-    private final PageService pageService;
-    private final LemmaService lemmaService;
-    private final IndexService indexService;
     private final IndexingThreadAction indexingThreadAction;
+    private final PrepareDatabaseBeforeIndexingAction prepareDatabaseAction;
 
     @Override
     public IndexingResponse initiateFullIndexing() {
         if (isIndexingInProcess) {
-            return GenerateIndexingResponseAction.getIndexingAlreadyStartedResponse();
+            return IndexingResponseGenerator.getIndexingAlreadyStartedResponse();
         }
         log.info("Full indexing initiated by user");
         setIndexingInProcessStatus();
-        PrepareDatabaseBeforeIndexingAction.prepareDatabaseBeforeFullIndexingStart(
-                siteService, pageService, lemmaService, indexService);
         ParseAction.isReadyForFullParsing();
         Thread indexingTask = new Thread(this::indexSiteListFromConfig, "site-indexing-thread");
         indexingTask.start();
-        return GenerateIndexingResponseAction.getAllGoodResponse();
+        return IndexingResponseGenerator.getAllGoodResponse();
     }
 
     private void indexSiteListFromConfig() {
+        prepareDatabaseAction.prepareDatabaseBeforeFullIndexingStart();
         log.info("Full indexing started");
         List<Site> siteList = sites.getSites();
         startConcurrentFullIndexing(siteList);
@@ -87,14 +86,14 @@ public class IndexingServiceImpl implements IndexingService {
     private boolean isIndexingFinishedCorrectly() {
         boolean isIndexingFinished = false;
         try {
-            GenerateLockAction.lockSiteParseReadLock();
+            LockGenerator.lockSiteParseReadLock();
             isIndexingFinished = siteService.getAll().stream()
                     .allMatch(site -> Objects.equals(site.getStatus(), SiteIndexingStatus.INDEXED) ||
                             Objects.equals(site.getStatus(), SiteIndexingStatus.FAILED));
         } catch (Exception ex) {
             log.error("Exception while checking all sites statuses", ex);
         } finally {
-            GenerateLockAction.unlockSiteParseReadLock();
+            LockGenerator.unlockSiteParseReadLock();
         }
         return isIndexingFinished;
     }
@@ -102,7 +101,7 @@ public class IndexingServiceImpl implements IndexingService {
     private Site getSiteForRequestedPageInConfig(String url) {
         List<Site> siteList = sites.getSites();
         return siteList.stream()
-                .filter(site -> FormatUrlAction.isPagePartOfSite(site.getUrl(), url))
+                .filter(site -> UrlFormatter.isPagePartOfSite(site.getUrl(), url))
                 .findAny()
                 .orElse(null);
     }
@@ -110,12 +109,14 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse stopIndexing() {
         if (!isIndexingInProcess) {
-            return GenerateIndexingResponseAction.getIndexingNotStartedResponse();
+            return IndexingResponseGenerator.getIndexingNotStartedResponse();
         }
-        executorThreadPool.shutdownNow();
+        if (executorThreadPool != null) {
+            executorThreadPool.shutdownNow();
+        }
         setIndexingStoppedStatus();
         ParseAction.stopParsing();
-        return GenerateIndexingResponseAction.getIndexingStoppedByUserResponse();
+        return IndexingResponseGenerator.getIndexingStoppedByUserResponse();
     }
 
     @Override
@@ -123,14 +124,14 @@ public class IndexingServiceImpl implements IndexingService {
         log.info("Indexing page initiated by user, url - {}", url);
         Site siteInConfig = getSiteForRequestedPageInConfig(url);
         if (siteInConfig == null) {
-            return GenerateIndexingResponseAction.getPageNotListedInConfigResponse(url);
+            return IndexingResponseGenerator.getPageNotListedInConfigResponse(url);
         }
         setIndexingInProcessStatus();
         ParseAction.isReadyForLimitedParsing();
         Thread indexingTask = new Thread(() ->
                 indexingThreadAction.indexingAddedPage(url, siteInConfig), "page-indexing-thread");
         indexingTask.start();
-        return GenerateIndexingResponseAction.getAllGoodResponse();
+        return IndexingResponseGenerator.getAllGoodResponse();
     }
 
     private void setIndexingInProcessStatus() {

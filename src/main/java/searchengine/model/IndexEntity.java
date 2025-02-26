@@ -6,14 +6,12 @@ import lombok.*;
 import java.util.Objects;
 
 // Lombok
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
 // Database
 @Entity
-@Table(name = "search_index")
+@Table(name = "search_index", indexes = @Index(name = "lemma_page_idx", columnList = "lemma_id, page_id"))
 public class IndexEntity {
 
     @Id

@@ -7,7 +7,7 @@ import searchengine.exceptions.PageNotFromSiteException;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.repository.PageRepository;
-import searchengine.services.actions.FormatUrlAction;
+import searchengine.util.UrlFormatter;
 import searchengine.services.entity.impl.PageServiceImpl;
 
 import java.util.Collections;
@@ -94,8 +94,8 @@ public class PageServiceTest {
         String absPathWithoutEscapeEnd = "https://test-site-url";
         PageEntity page = new PageEntity();
         page.setId(id);
-        page.setRelativePath(FormatUrlAction.SITE_HOME_PAGE_RELATIVE_PATH);
-        Mockito.when(pageRepository.findByRelativePathAndSite(FormatUrlAction.SITE_HOME_PAGE_RELATIVE_PATH, site))
+        page.setRelativePath(UrlFormatter.SITE_HOME_PAGE_RELATIVE_PATH);
+        Mockito.when(pageRepository.findByRelativePathAndSite(UrlFormatter.SITE_HOME_PAGE_RELATIVE_PATH, site))
                 .thenReturn(Optional.of(page));
         PageEntity pageFromServiceWithEscapeEnd = pageService.getByAbsPathAndSite(absPathWithEscapeEnd, site);
         assertEquals(id, pageFromServiceWithEscapeEnd.getId());
@@ -130,7 +130,7 @@ public class PageServiceTest {
     @DisplayName("Save site home page")
     public void testSaveHomePage() {
         PageEntity page = new PageEntity();
-        String relativePath = FormatUrlAction.SITE_HOME_PAGE_RELATIVE_PATH;
+        String relativePath = UrlFormatter.SITE_HOME_PAGE_RELATIVE_PATH;
         page.setRelativePath(relativePath);
         Mockito.when(pageRepository.saveAndFlush(page)).thenReturn(page);
         PageEntity pageFromService = pageService.save(page);
@@ -219,7 +219,7 @@ public class PageServiceTest {
         site.setUrl(siteUrl);
         PageEntity page = new PageEntity();
         page.setCode(200);
-        Mockito.when(pageRepository.findByRelativePathAndSite(FormatUrlAction.SITE_HOME_PAGE_RELATIVE_PATH, site))
+        Mockito.when(pageRepository.findByRelativePathAndSite(UrlFormatter.SITE_HOME_PAGE_RELATIVE_PATH, site))
                 .thenReturn(Optional.of(page));
         assertTrue(pageService.isSiteHomePageAccessible(site));
     }
@@ -232,7 +232,7 @@ public class PageServiceTest {
         site.setUrl(siteUrl);
         PageEntity page = new PageEntity();
         page.setCode(404);
-        Mockito.when(pageRepository.findByRelativePathAndSite(FormatUrlAction.SITE_HOME_PAGE_RELATIVE_PATH, site))
+        Mockito.when(pageRepository.findByRelativePathAndSite(UrlFormatter.SITE_HOME_PAGE_RELATIVE_PATH, site))
                 .thenReturn(Optional.of(page));
         assertFalse(pageService.isSiteHomePageAccessible(site));
     }
@@ -243,7 +243,7 @@ public class PageServiceTest {
         String siteUrl = "https://test-site-url";
         SiteEntity site = new SiteEntity();
         site.setUrl(siteUrl);
-        Mockito.when(pageRepository.findByRelativePathAndSite(FormatUrlAction.SITE_HOME_PAGE_RELATIVE_PATH, site))
+        Mockito.when(pageRepository.findByRelativePathAndSite(UrlFormatter.SITE_HOME_PAGE_RELATIVE_PATH, site))
                 .thenReturn(Optional.empty());
         assertFalse(pageService.isSiteHomePageAccessible(site));
     }

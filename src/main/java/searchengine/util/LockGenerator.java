@@ -1,8 +1,8 @@
-package searchengine.services.actions;
+package searchengine.util;
 
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class GenerateLockAction {
+public class LockGenerator {
     public static final ReentrantReadWriteLock PAGE_PARSE_LOCK = new ReentrantReadWriteLock();
     public static final ReentrantReadWriteLock SITE_PARSE_LOCK = new ReentrantReadWriteLock();
 
