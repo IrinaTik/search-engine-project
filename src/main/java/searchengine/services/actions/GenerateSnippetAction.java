@@ -9,6 +9,7 @@ import searchengine.dto.search.UnalteredWord;
 import searchengine.model.PageEntity;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Service
@@ -104,31 +105,57 @@ public class GenerateSnippetAction {
             String snippetToAppend = snippetsWithQueryWordsCount.get(queryWordsCount);
             finalSnippet.append(snippetToAppend);
             if (finalSnippet.length() > MAX_SNIPPET_LENGTH_IN_SYMBOLS) {
-                int firstDelimiterNearMaxLength = getFirstDelimiterNearMaxLength(finalSnippet.toString());
-                finalSnippet.replace(
-                        Math.min(firstDelimiterNearMaxLength + Snippet.SNIPPET_DELIMITER.length(), finalSnippet.length()),
-                        finalSnippet.length(),
-                        "");
+                int pointToCutSnippet = getPointToCutSnippetNearMaxLength(finalSnippet.toString());
+                cutFinalSnippetToReasonableLength(finalSnippet, pointToCutSnippet);
                 break;
             }
         }
         return finalSnippet.toString();
     }
 
-    private int getFirstDelimiterNearMaxLength(String snippet) {
+    private int getPointToCutSnippetNearMaxLength(String snippet) {
         int lastDelimiterIndex = snippet
                 .substring(0, MAX_SNIPPET_LENGTH_IN_SYMBOLS)
                 .lastIndexOf(Snippet.SNIPPET_DELIMITER);
         if (lastDelimiterIndex == -1) {
-            return Math.max(0, snippet.indexOf(Snippet.SNIPPET_DELIMITER, MAX_SNIPPET_LENGTH_IN_SYMBOLS));
+            return getLastSpaceBeforeMaxSnippetLength(snippet);
         }
         return lastDelimiterIndex;
     }
 
+    private int getLastSpaceBeforeMaxSnippetLength(String bigSnippet) {
+        String cutSnippet = bigSnippet.substring(0, MAX_SNIPPET_LENGTH_IN_SYMBOLS);
+        return Math.max(0, cutSnippet.lastIndexOf(" "));
+    }
+
+    private void cutFinalSnippetToReasonableLength(StringBuilder finalSnippet, int pointToCutSnippet) {
+        cutSnippetToCutPointWithDelimiterLengthAddition(finalSnippet, pointToCutSnippet);
+        makeSureDelimiterIsLast(finalSnippet);
+    }
+
+    private void cutSnippetToCutPointWithDelimiterLengthAddition(StringBuilder finalSnippet, int pointToCutSnippet) {
+        finalSnippet.replace(
+                Math.min(pointToCutSnippet + Snippet.SNIPPET_DELIMITER.length(), finalSnippet.length()),
+                finalSnippet.length(),
+                "");
+    }
+
+    private void makeSureDelimiterIsLast(StringBuilder finalSnippet) {
+        if (!StringUtils.endsWith(finalSnippet, Snippet.SNIPPET_DELIMITER)) {
+            finalSnippet.replace(
+                    finalSnippet.length() - Snippet.SNIPPET_DELIMITER.length(),
+                    finalSnippet.length(),
+                    Snippet.SNIPPET_DELIMITER);
+        }
+    }
+
     private String getSnippetWithQueryWordsInBold(String snippetText, List<UnalteredWord> wordsContainingQuery) {
-        for (UnalteredWord word : wordsContainingQuery) {
-            String wordInBold = "<b>" + word.getInitialWord() + "</b>";
-            snippetText = snippetText.replaceAll("(?<!<b>)(" + word.getInitialWord() + ")(?!\\p{L})", wordInBold);
+        Set<String> initialWordsContainingQuery = wordsContainingQuery.stream()
+                .map(UnalteredWord::getInitialWord)
+                .collect(Collectors.toSet());
+        for (String word : initialWordsContainingQuery) {
+            String wordInBold = "<b>" + word + "</b>";
+            snippetText = snippetText.replaceAll("(?<!<b>)(" + word + ")(?!\\p{L})", wordInBold);
         }
         return snippetText;
     }
