@@ -31,13 +31,54 @@ public class GenerateSnippetActionTest {
         String lemma2 = "дикий";
         queryLemmas.add(lemma1);
         queryLemmas.add(lemma2);
+        String snippet = getSnippet(pageContent, queryLemmas);
+        assertEquals(expected, snippet);
+    }
+
+    private String getSnippet(String pageContent, Set<String> queryLemmas) {
         SiteEntity site = new SiteEntity();
         site.setUrl("https://test-site-url");
         PageEntity page = new PageEntity();
         page.setContent(pageContent);
         page.setRelativePath("/path");
         page.setSite(site);
-        String snippet = snippetAction.createSnippet(page, queryLemmas);
+        return snippetAction.createSnippet(page, queryLemmas);
+    }
+
+    @Test
+    @DisplayName("Cut one big snippet (by space)")
+    public void testCutBigSnippetBySpace() {
+        String expected = "<b>Расписание</b> занятий - <b>Расписание</b> занятий - <b>Расписание</b> занятий - " +
+                "<b>Расписание</b> занятий <b>Расписание</b> занятий - <b>Расписание</b> занятий - <b>Расписание</b> " +
+                "занятий - <b>Расписание</b> занятий памc <b>Расписание</b> занятий - <b>Расписание</b> занятий - " +
+                "<b>Расписание</b> занятий - <b>Расписание</b>...";
+        String pageContent = """
+                Расписание занятий - Расписание занятий - Расписание занятий - Расписание занятий
+                Расписание занятий - Расписание занятий - Расписание занятий - Расписание занятий памc
+                Расписание занятий - Расписание занятий - Расписание занятий - Расписание занятий
+                Расписание занятий - Расписание занятий - Расписание занятий - Расписание занятий""";
+        Set<String> queryLemmas = new HashSet<>();
+        String lemma1 = "расписание";
+        queryLemmas.add(lemma1);
+        String snippet = getSnippet(pageContent, queryLemmas);
+        assertEquals(expected, snippet);
+    }
+
+    @Test
+    @DisplayName("Cut several snippets (by delimiter)")
+    public void testCutBigSnippetByDelimiter() {
+        String expected = "<b>Расписание</b> занятий - <b>Расписание</b> занятий - <b>Расписание</b> занятий - " +
+                "<b>Расписание</b> занятий <b>Расписание</b> занятий - <b>Расписание</b> занятий - <b>Расписание</b> " +
+                "занятий - <b>Расписание</b> занятий...";
+        String pageContent = """
+                Расписание занятий - Расписание занятий - Расписание занятий - Расписание занятий
+                Расписание занятий - Расписание занятий - Расписание занятий - Расписание занятий...
+                Расписание занятий - Расписание занятий - Расписание занятий - Расписание занятий
+                Расписание занятий - Расписание занятий - Расписание занятий - Расписание занятий""";
+        Set<String> queryLemmas = new HashSet<>();
+        String lemma1 = "расписание";
+        queryLemmas.add(lemma1);
+        String snippet = getSnippet(pageContent, queryLemmas);
         assertEquals(expected, snippet);
     }
 }
