@@ -21,10 +21,10 @@ indexing-settings:
     - url: https://skillbox.ru
       name: Skillbox
     - url: https://playback.ru
-      name: Playback
+      name: Магазин Playback
     - url: https://mpei.ru
-      name: Национальный исследовательский университет МЭИ
-    - url: https://ipfran.ru
+      name: НИУ МЭИ
+    - url: https://www.ipfran.ru
       name: Институт прикладной физики РАН
     - url: https://www.svetlovka.ru
       name: ЦГМБ имени М.А.Светлова

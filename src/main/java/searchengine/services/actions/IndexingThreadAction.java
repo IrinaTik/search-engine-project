@@ -50,6 +50,7 @@ public class IndexingThreadAction {
         siteService.save(site);
         if (isCancelledStopIndexing) {
             handleStopByUser(site);
+            countDownLatch.countDown();
             return IndexingResponseGenerator.getIndexingStoppedByUserResponse();
         }
         IndexingResponse indexingOneSiteResponse = gatherSiteIndexingInfo(site);

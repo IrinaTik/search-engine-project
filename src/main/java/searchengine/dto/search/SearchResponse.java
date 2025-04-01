@@ -7,8 +7,6 @@ import java.util.Collections;
 import java.util.List;
 
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
 @ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Builder(access = AccessLevel.PRIVATE)

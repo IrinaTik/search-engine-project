@@ -13,11 +13,15 @@ public class IndexingResponseGenerator {
     public static final String SITE_HOME_PAGE_NOT_ACCESSIBLE = "Главная страница сайта недоступна";
     public static final String PAGE_NOT_LISTED_IN_CONFIG = "Данная страница находится за пределами сайтов, указанных в конфигурационном файле";
 
-    private static final IndexingResponse INDEXING_ALREADY_STARTED_RESPONSE = new IndexingResponse(false, INDEXING_ALREADY_STARTED_ERROR);
-    private static final IndexingResponse INDEXING_NOT_STARTED_RESPONSE = new IndexingResponse(false, INDEXING_NOT_STARTED_ERROR);
-    private static final IndexingResponse SITE_HOME_PAGE_NOT_ACCESSIBLE_RESPONSE = new IndexingResponse(false, SITE_HOME_PAGE_NOT_ACCESSIBLE);
-    private static final IndexingResponse PAGE_NOT_LISTED_IN_CONFIG_RESPONSE = new IndexingResponse(false, PAGE_NOT_LISTED_IN_CONFIG);
-    private static final IndexingResponse GOOD_INDEXING_RESPONSE = new IndexingResponse(true, "");
+    private static final IndexingResponse INDEXING_ALREADY_STARTED_RESPONSE =
+            IndexingResponse.buildErrorIndexingResponse(INDEXING_ALREADY_STARTED_ERROR);
+    private static final IndexingResponse INDEXING_NOT_STARTED_RESPONSE =
+            IndexingResponse.buildErrorIndexingResponse(INDEXING_NOT_STARTED_ERROR);
+    private static final IndexingResponse SITE_HOME_PAGE_NOT_ACCESSIBLE_RESPONSE =
+            IndexingResponse.buildErrorIndexingResponse(SITE_HOME_PAGE_NOT_ACCESSIBLE);
+    private static final IndexingResponse PAGE_NOT_LISTED_IN_CONFIG_RESPONSE =
+            IndexingResponse.buildErrorIndexingResponse(PAGE_NOT_LISTED_IN_CONFIG);
+    private static final IndexingResponse GOOD_INDEXING_RESPONSE = IndexingResponse.buildGoodIndexingResponse();
 
     public static IndexingResponse getIndexingAlreadyStartedResponse() {
         log.error("Attempt to start indexing was made while there was already indexing in process");
@@ -48,14 +52,13 @@ public class IndexingResponseGenerator {
         return GOOD_INDEXING_RESPONSE;
     }
 
-    public static IndexingResponse getIndexingFailedErrorResponse(String siteUrl, String error) {
-        IndexingResponse result = new IndexingResponse();
-        result.setResult(false);
-        result.setError("Ошибка индексации: сайт - " + siteUrl + "\n" + error);
+    public static IndexingResponse getIndexingFailedErrorResponse(String siteUrl, String indexingError) {
+        String errorMessage = "Ошибка индексации: сайт - " + siteUrl + "\n" + indexingError;
+        IndexingResponse result = IndexingResponse.buildErrorIndexingResponse(errorMessage);
         log.error("Indexing completed with status {} for site {} with error '{}'",
                 SiteIndexingStatus.FAILED,
                 siteUrl,
-                error);
+                indexingError);
         return result;
     }
 

@@ -4,12 +4,18 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @ToString
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class IndexingResponse {
     private boolean result;
     private String error;
+
+    public static IndexingResponse buildGoodIndexingResponse() {
+        return new IndexingResponse(true, "");
+    }
+
+    public static IndexingResponse buildErrorIndexingResponse(String error) {
+        return new IndexingResponse(false, error);
+    }
 }
