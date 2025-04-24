@@ -59,11 +59,7 @@ public class IndexingServiceImpl implements IndexingService {
         log.info("Full indexing started");
         List<Site> siteList = sites.getSites();
         startConcurrentFullIndexing(siteList);
-        if (!isIndexingFinishedCorrectly()) {
-            log.error("Some site statuses are incorrect after completing full indexing");
-        }
-        setIndexingCompletedStatus();
-        log.info("Indexing complete flag was returned to original state");
+        finishIndexing();
         log.info("Full indexing is finished");
     }
 
@@ -81,6 +77,14 @@ public class IndexingServiceImpl implements IndexingService {
         } finally {
             executorThreadPool.shutdown();
         }
+    }
+
+    private void finishIndexing() {
+        if (!isIndexingFinishedCorrectly()) {
+            log.error("Some site statuses are incorrect after completing full indexing");
+        }
+        setIndexingCompletedStatus();
+        log.info("Indexing complete flag was returned to original state");
     }
 
     private boolean isIndexingFinishedCorrectly() {
@@ -128,10 +132,14 @@ public class IndexingServiceImpl implements IndexingService {
         }
         setIndexingInProcessStatus();
         ParseAction.isReadyForLimitedParsing();
-        Thread indexingTask = new Thread(() ->
-                indexingThreadAction.indexingAddedPage(url, siteInConfig), "page-indexing-thread");
+        Thread indexingTask = new Thread(() -> indexOnePage(url, siteInConfig), "page-indexing-thread");
         indexingTask.start();
         return IndexingResponseGenerator.getAllGoodResponse();
+    }
+
+    private void indexOnePage(String url, Site siteInConfig) {
+        indexingThreadAction.indexingAddedPage(url, siteInConfig);
+        finishIndexing();
     }
 
     private void setIndexingInProcessStatus() {

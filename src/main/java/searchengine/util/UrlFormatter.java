@@ -11,7 +11,7 @@ public class UrlFormatter {
     private static final String SCROLLUP_LINK = "#";
     private static final String ESCAPE_SYMBOL = "/";
     public static final String SITE_HOME_PAGE_RELATIVE_PATH = ESCAPE_SYMBOL;
-    private static final List<String> URL_IS_FILE = List.of(".doc", ".docx", ".pdf", ".png", ".jpg", ".jpeg");
+    private static final List<String> URL_IS_FILE = List.of(".doc", ".docx", ".pdf", ".png", ".jpg", ".jpeg", ".zip");
 
     public static String convertAbsPathToRelativePath(String absPath, SiteEntity site) {
         String siteUrl = removeEscapeEnd(site.getUrl());
