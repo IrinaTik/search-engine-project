@@ -20,7 +20,7 @@ public class SearchResponse {
     public static SearchResponse buildSearchResponseWithData(List<SearchData> searchDataList, Integer totalDataCount) {
         return SearchResponse.builder()
                 .result(true)
-                .error("")
+                .error(null)
                 .count(totalDataCount)
                 .data(searchDataList)
                 .build();

@@ -12,7 +12,7 @@ public class IndexingResponse {
     private String error;
 
     public static IndexingResponse buildGoodIndexingResponse() {
-        return new IndexingResponse(true, "");
+        return new IndexingResponse(true, null);
     }
 
     public static IndexingResponse buildErrorIndexingResponse(String error) {
